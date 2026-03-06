@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clearsky - No More Clouds</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: linear-gradient(135deg, #87CEEB 0%, #E0F6FF 100%);
+      min-height: 100vh;
+      color: #333;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .header h1 {
+      font-size: 2.5rem;
+      color: #1a5f7a;
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      color: #666;
+      font-size: 1.1rem;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+    }
+
+    .step {
+      display: none;
+    }
+
+    .step.active {
+      display: block;
+    }
+
+    .step h2 {
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+      color: #1a5f7a;
+    }
+
+    .checkbox-group {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .checkbox-option {
+      display: flex;
+      align-items: center;
+      padding: 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .checkbox-option:hover {
+      border-color: #87CEEB;
+      background: #f0f9ff;
+    }
+
+    .checkbox-option input {
+      width: 20px;
+      height: 20px;
+      margin-right: 15px;
+      accent-color: #1a5f7a;
+    }
+
+    .service-icon {
+      font-size: 2rem;
+      margin-right: 15px;
+    }
+
+    .guide-link {
+      display: inline-block;
+      background: #1a5f7a;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 6px;
+      text-decoration: none;
+      margin-top: 10px;
+      font-weight: 500;
+      transition: background 0.3s ease;
+    }
+
+    .guide-link:hover {
+      background: #144d61;
+    }
+
+    .drag-zone {
+      border: 3px dashed #87CEEB;
+      border-radius: 12px;
+      padding: 40px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: #f9fdff;
+    }
+
+    .drag-zone:hover {
+      border-color: #1a5f7a;
+      background: #e8f5ff;
+    }
+
+    .drag-zone.dragover {
+      border-color: #1a5f7a;
+      background: #d0eaff;
+    }
+
+    .drag-zone p {
+      color: #666;
+      margin-bottom: 10px;
+    }
+
+    .drag-zone span {
+      font-weight: 600;
+      color: #1a5f7a;
+    }
+
+    .btn {
+      padding: 12px 30px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin: 5px;
+    }
+
+    .btn-primary {
+      background: #1a5f7a;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #144d61;
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+      background: #e0e0e0;
+      color: #333;
+    }
+
+    .btn-secondary:hover {
+      background: #d0d0d0;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .progress-container {
+      margin-top: 20px;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 24px;
+      background: #e0e0e0;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #1a5f7a, #87CEEB);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    .progress-text {
+      text-align: center;
+      margin-top: 10px;
+      font-weight: 600;
+      color: #1a5f7a;
+    }
+
+    .info-box {
+      background: #f0f9ff;
+      border-left: 4px solid #1a5f7a;
+      padding: 15px;
+      margin: 15px 0;
+      border-radius: 0 8px 8px 0;
+    }
+
+    .info-box h3 {
+      color: #1a5f7a;
+      margin-bottom: 8px;
+    }
+
+    .info-box p {
+      color: #666;
+      line-height: 1.6;
+    }
+
+    .success-message {
+      text-align: center;
+      padding: 40px;
+    }
+
+    .success-icon {
+      font-size: 4rem;
+      color: #1a5f7a;
+      margin-bottom: 20px;
+    }
+
+    .preview-container {
+      margin-top: 20px;
+    }
+
+    .preview-btn {
+      background: linear-gradient(135deg, #1a5f7a, #87CEEB);
+      color: white;
+      padding: 12px 30px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .preview-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(26, 95, 122, 0.3);
+    }
+
+    .error-message {
+      background: #ffebee;
+      border-left: 4px solid #f44336;
+      padding: 15px;
+      margin: 15px 0;
+      border-radius: 0 8px 8px 0;
+      color: #c62828;
+    }
+
+    .podman-warning {
+      background: #fff3e0;
+      border-left: 4px solid #ff9800;
+      padding: 15px;
+      margin: 15px 0;
+      border-radius: 0 8px 8px 0;
+    }
+
+    .podman-warning a {
+      color: #1a5f7a;
+      font-weight: 600;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 30px;
+      color: #666;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>☁️ Clearsky</h1>
+      <p>No More Clouds</p>
+    </div>
+
+    <div id="podman-warning" class="podman-warning" style="display: none;">
+      <strong>⚠️ Podman is not installed</strong><br>
+      Please install Podman to continue. <a href="#" id="install-podman-link">Click here for installation instructions</a>
+    </div>
+
+    <div class="card">
+      <div id="step-welcome" class="step active">
+        <h2>Welcome to Clearsky</h2>
+        <div class="info-box">
+          <h3>What is Clearsky?</h3>
+          <p>Clearsky helps you migrate your data from cloud services to self-hosted, privacy-focused alternatives. Your data stays on your machine, under your control.</p>
+        </div>
+        <p>Select the services you want to migrate from:</p>
+        <div class="checkbox-group" style="margin: 20px 0;">
+          <label class="checkbox-option">
+            <input type="checkbox" id="service-google-photos" value="google-photos">
+            <span class="service-icon">📸</span>
+            <div>
+              <strong>Google Photos</strong>
+              <p style="color: #666; margin: 0;">Export and migrate your photo albums</p>
+            </div>
+          </label>
+          <label class="checkbox-option">
+            <input type="checkbox" id="service-google-drive" value="google-drive">
+            <span class="service-icon">📁</span>
+            <div>
+              <strong>Google Drive / Docs</strong>
+              <p style="color: #666; margin: 0;">Migrate documents and files</p>
+            </div>
+          </label>
+          <label class="checkbox-option">
+            <input type="checkbox" id="service-icloud" value="icloud">
+            <span class="service-icon">☁️</span>
+            <div>
+              <strong>iCloud Photos</strong>
+              <p style="color: #666; margin: 0;">Migrate your iCloud photos</p>
+            </div>
+          </label>
+        </div>
+        <button id="btn-start-migration" class="btn btn-primary">Start Migration</button>
+      </div>
+
+      <div id="step-guide" class="step">
+        <h2>Export Your Data</h2>
+        <div class="info-box">
+          <h3>For Google Photos:</h3>
+          <ol>
+            <li>Go to <a href="https://takeout.google.com" target="_blank" style="color: #1a5f7a;">takeout.google.com</a></li>
+            <li>Select "Photos" and configure your export</li>
+            <li>Choose "Export once" and download your ZIP file</li>
+            <li>Return here when ready</li>
+          </ol>
+        </div>
+        <div id="service-specific-guide"></div>
+        <button id="btn-back-guide" class="btn btn-secondary">Back</button>
+        <button id="btn-continue-guide" class="btn btn-primary" disabled>Continue</button>
+      </div>
+
+      <div id="step-upload" class="step">
+        <h2>Upload Your Exported Files</h2>
+        <p>Drag and drop your exported ZIP files here:</p>
+        <div class="drag-zone" id="drop-zone">
+          <p><strong>Drag files here</strong> or <span>click to browse</span></p>
+          <p style="font-size: 0.9rem; color: #999;">Supports ZIP files from Google Takeout</p>
+          <input type="file" id="file-input" style="display: none;" accept=".zip,application/zip">
+        </div>
+        <div id="selected-files" style="margin: 20px 0;"></div>
+        <button id="btn-back-upload" class="btn btn-secondary">Back</button>
+        <button id="btn-import" class="btn btn-primary" disabled>Import Photos</button>
+      </div>
+
+      <div id="step-progress" class="step">
+        <h2>Migrating Your Data</h2>
+        <div class="progress-container">
+          <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+          </div>
+          <p class="progress-text" id="progress-text">Starting migration...</p>
+        </div>
+        <div id="migration-log" style="margin-top: 20px; font-family: monospace; background: #f5f5f5; padding: 15px; border-radius: 8px; max-height: 200px; overflow-y: auto;"></div>
+      </div>
+
+      <div id="step-preview" class="step">
+        <h2>Preview Your Migration</h2>
+        <div class="info-box">
+          <h3>Immich Dashboard</h3>
+          <p>Your photos have been imported to Immich. Preview your gallery before committing:</p>
+        </div>
+        <button id="btn-preview" class="preview-btn">Open Immich Dashboard</button>
+        <div style="margin-top: 30px;">
+          <button id="btn-back-preview" class="btn btn-secondary">Back</button>
+          <button id="btn-commit" class="btn btn-primary" style="background: #4CAF50;">Commit Migration</button>
+        </div>
+      </div>
+
+      <div id="step-tailscale" class="step">
+        <h2>Set Up Remote Access</h2>
+        <div class="info-box">
+          <h3>Tailscale Integration</h3>
+          <p>Enable secure remote access to your self-hosted services:</p>
+          <ol>
+            <li>Click "Set Up Tailscale" below</li>
+            <li>Authenticate with your Tailscale account</li>
+            <li>Get a unique URL to access your services from anywhere</li>
+          </ol>
+        </div>
+        <button id="btn-setup-tailscale" class="btn btn-primary">Set Up Tailscale</button>
+        <div id="tailscale-status" style="margin-top: 20px;"></div>
+        <button id="btn-skip-tailscale" class="btn btn-secondary" style="margin-top: 10px;">Skip for Now</button>
+      </div>
+
+      <div id="step-complete" class="step success-message">
+        <div class="success-icon">✅</div>
+        <h2>Migration Complete!</h2>
+        <p>Your data has been successfully migrated to self-hosted services.</p>
+        <div style="margin: 20px 0;">
+          <button id="btn-open-dashboard" class="btn btn-primary">Open Dashboard</button>
+          <button id="btn-undo" class="btn btn-secondary">Undo / Rollback</button>
+        </div>
+        <p style="color: #666; font-size: 0.9rem;">Your photos are now stored locally. Access via the tray icon.</p>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p>Clearsky v1.0.0 | Privacy-focused data migration</p>
+    </div>
+  </div>
+
+  <script>
+    const { ipcRenderer, remote } = require('electron');
+    const path = require('path');
+    const fs = require('fs');
+
+    let selectedFiles = [];
+    let servicesSelected = [];
+    let progress = 0;
+
+    // DOM Elements
+    const steps = {
+      welcome: document.getElementById('step-welcome'),
+      guide: document.getElementById('step-guide'),
+      upload: document.getElementById('step-upload'),
+      progress: document.getElementById('step-progress'),
+      preview: document.getElementById('step-preview'),
+      tailscale: document.getElementById('step-tailscale'),
+      complete: document.getElementById('step-complete')
+    };
+
+    const podmanWarning = document.getElementById('podman-warning');
+
+    // Check Podman status
+    ipcRenderer.send('check-podman');
+    ipcRenderer.on('podman-status', (event, status) => {
+      if (!status.installed) {
+        podmanWarning.style.display = 'block';
+      }
+    });
+
+    // Navigation
+    function showStep(stepName) {
+      Object.values(steps).forEach(step => step.classList.remove('active'));
+      steps[stepName].classList.add('active');
+    }
+
+    // Service selection
+    document.querySelectorAll('.checkbox-option input').forEach(checkbox => {
+      checkbox.addEventListener('change', (e) => {
+        if (e.target.checked) {
+          servicesSelected.push(e.target.value);
+        } else {
+          servicesSelected = servicesSelected.filter(s => s !== e.target.value);
+        }
+        updateGuide();
+      });
+    });
+
+    function updateGuide() {
+      const guideContainer = document.getElementById('service-specific-guide');
+      if (servicesSelected.includes('google-photos')) {
+        guideContainer.innerHTML = '<p><strong>Google Photos selected</strong> - Export from takeout.google.com</p>';
+      }
+      if (servicesSelected.length > 0) {
+        document.getElementById('btn-continue-guide').disabled = false;
+      } else {
+        document.getElementById('btn-continue-guide').disabled = true;
+      }
+    }
+
+    // Button events
+    document.getElementById('btn-start-migration').addEventListener('click', () => {
+      if (servicesSelected.length === 0) {
+        alert('Please select at least one service to migrate');
+        return;
+      }
+      showStep('guide');
+    });
+
+    document.getElementById('btn-continue-guide').addEventListener('click', () => {
+      showStep('upload');
+    });
+
+    document.getElementById('btn-back-guide').addEventListener('click', () => {
+      showStep('welcome');
+    });
+
+    // Drag and drop
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+
+    dropZone.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', (e) => {
+      handleFiles(e.target.files);
+    });
+
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+      dropZone.addEventListener(eventName, (e) => e.preventDefault());
+    });
+
+    dropZone.addEventListener('dragover', () => dropZone.classList.add('dragover'));
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', (e) => {
+      dropZone.classList.remove('dragover');
+      handleFiles(e.dataTransfer.files);
+    });
+
+    function handleFiles(files) {
+      selectedFiles = Array.from(files).filter(file => file.name.endsWith('.zip'));
+      const fileCount = selectedFiles.length;
+      
+      document.getElementById('selected-files').innerHTML = `
+        <div style="padding: 10px; background: #e8f5e9; border-radius: 8px; margin-top: 10px;">
+          <strong>${fileCount} file${fileCount !== 1 ? 's' : ''} selected:</strong>
+          ${selectedFiles.map(f => `<div>📁 ${f.name} (${(f.size / 1024 / 1024).toFixed(2)} MB)</div>`).join('')}
+        </div>
+      `;
+      
+      document.getElementById('btn-import').disabled = fileCount === 0;
+    }
+
+    // Import button
+    document.getElementById('btn-import').addEventListener('click', async () => {
+      if (selectedFiles.length === 0) {
+        alert('Please select at least one ZIP file');
+        return;
+      }
+
+      showStep('progress');
+      
+      // Start Immich service
+      ipcRenderer.send('start-immich');
+      
+      // Import files
+      for (const file of selectedFiles) {
+        progress = (selectedFiles.indexOf(file) / selectedFiles.length) * 100;
+        updateProgress(progress, `Importing ${file.name}...`);
+        
+        try {
+          await ipcRenderer.invoke('import-photos', file.path);
+          updateProgress(progress, `✓ ${file.name} imported successfully`);
+        } catch (error) {
+          updateProgress(progress, `✗ Error importing ${file.name}: ${error.message}`);
+        }
+      }
+      
+      updateProgress(100, 'Migration complete! Ready to preview.');
+      
+      setTimeout(() => {
+        showStep('preview');
+      }, 1500);
+    });
+
+    function updateProgress(percent, message) {
+      document.getElementById('progress-fill').style.width = percent + '%';
+      document.getElementById('progress-text').textContent = message;
+      
+      const log = document.getElementById('migration-log');
+      log.innerHTML += `<div style="padding: 5px;">[${new Date().toLocaleTimeString()}] ${message}</div>`;
+      log.scrollTop = log.scrollHeight;
+    }
+
+    // Preview and commit
+    document.getElementById('btn-preview').addEventListener('click', () => {
+      require('open')('http://localhost:2283');
+    });
+
+    document.getElementById('btn-commit').addEventListener('click', () => {
+      showStep('tailscale');
+    });
+
+    document.getElementById('btn-back-preview').addEventListener('click', () => {
+      showStep('upload');
+    });
+
+    // Tailscale setup
+    document.getElementById('btn-setup-tailscale').addEventListener('click', async () => {
+      const statusDiv = document.getElementById('tailscale-status');
+      statusDiv.innerHTML = '<p>Starting Tailscale...</p>';
+      
+      try {
+        await ipcRenderer.invoke('start-tailscale', null);
+        statusDiv.innerHTML = '<p style="color: #4CAF50;"><strong>Tailscale is running!</strong> You can now access your services remotely.</p>';
+      } catch (error) {
+        statusDiv.innerHTML = `<p style="color: #f44336;">Error: ${error.message}</p>`;
+      }
+    });
+
+    document.getElementById('btn-skip-tailscale').addEventListener('click', () => {
+      showStep('complete');
+    });
+
+    // Complete
+    document.getElementById('btn-open-dashboard').addEventListener('click', () => {
+      require('open')('http://localhost:2283');
+    });
+
+    document.getElementById('btn-undo').addEventListener('click', async () => {
+      if (confirm('Are you sure you want to rollback? This will stop services and restore previous data.')) {
+        ipcRenderer.send('rollback', 'immich');
+        alert('Rollback complete. Services have been stopped.');
+        showStep('welcome');
+      }
+    });
+
+    // Tray context menu
+    ipcRenderer.on('podman-missing', (event, message) => {
+      console.log('Podman missing:', message);
+    });
+  </script>
+</body>
+</html>

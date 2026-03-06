@@ -1,0 +1,11 @@
+[package]
+name = "clearsky"
+version = "1.0.0"
+description = "No More Clouds - Migrate your data to self-hosted services"
+edition = "2021"
+
+[dependencies]
+# Nix dependencies will be resolved at build time
+
+[build-dependencies]
+# Build scripts

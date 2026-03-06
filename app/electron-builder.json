@@ -1,0 +1,24 @@
+{
+  "name": "clearsky",
+  "productName": "Clearsky",
+  "version": "1.0.0",
+  "description": "No More Clouds - Migrate your data to self-hosted services",
+  "main": "main.js",
+  "author": "",
+  "license": "MIT",
+  "build": {
+    "appId": "com.clearsky.app",
+    "productName": "Clearsky",
+    "directories": {
+      "output": "dist"
+    },
+    "linux": {
+      "target": "AppImage",
+      "category": "Utility"
+    },
+    "appImage": {
+      "license": "LICENSE",
+      "publish": null
+    }
+  }
+}

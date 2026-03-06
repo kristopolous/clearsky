@@ -1,0 +1,11 @@
+# AppImage configuration
+[AppImage]
+name = Clearsky
+version = 1.0.0
+arch = x86_64
+
+[Environment]
+PATH = ${pkgs.stdenv.hostPlatform.linux.podman}/bin:${pkgs.immich-go}/bin:$PATH
+
+[Exec]
+command = clearsky
