@@ -1,6 +1,8 @@
-# Clearsky: No More Clouds
-
-A user-friendly desktop application that guides non-technical users through migrating their data from cloud services to self-hosted, privacy-focused alternatives.
+<p align="center">
+  <img width=560 src=https://github.com/user-attachments/assets/6353c265-aeef-463c-96e6-4e5298289678>
+<br/>
+</p>
+**Clearsky** is a user-friendly desktop application that guides non-technical users through migrating their data from cloud services to self-hosted, privacy-focused alternatives.
 
 **Built for the NixOS Hackathon** - showcasing Nix's power for reproducible, self-contained desktop applications.
 
