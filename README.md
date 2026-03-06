@@ -1,5 +1,7 @@
-# Clearsky: No More Clouds
-
+<p align="center">
+  <img width=560 src=https://github.com/user-attachments/assets/6353c265-aeef-463c-96e6-4e5298289678>
+<br/>
+</p>
 A user-friendly desktop application that guides non-technical users through migrating their data from cloud services to self-hosted, privacy-focused alternatives.
 
 ## Features
