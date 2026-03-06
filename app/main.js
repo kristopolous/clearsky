@@ -1,11 +1,33 @@
 const { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage } = require('electron');
 const path = require('path');
-const { exec } = require('child_process');
+const { exec, execSync } = require('child_process');
 const fs = require('fs');
 
 let mainWindow = null;
 let tray = null;
 const isDev = process.env.NODE_ENV === 'development';
+
+// Load migrations from Nix registry
+function loadMigrations() {
+  try {
+    // Try to load from Nix flake
+    const projectRoot = path.join(__dirname, '..');
+    const output = execSync(`cd ${projectRoot} && nix eval --json .#packages.x86_64-linux.default 2>/dev/null`, { encoding: 'utf-8' });
+    return JSON.parse(output);
+  } catch (error) {
+    console.log('Warning: Could not load migrations from Nix, using fallback', error.message);
+    // Fallback: return hardcoded migration info
+    return {
+      'google-photos-to-immich': {
+        name: 'Google Photos to Immich',
+        source: 'google-photos',
+        target: 'immich',
+        description: 'Migrate Google Photos exports to Immich',
+        version: '1.0.0'
+      }
+    };
+  }
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -29,9 +51,9 @@ function createWindow() {
 function createTray() {
   const trayPath = path.join(__dirname, 'assets', 'icon.png');
   const trayIcon = nativeImage.createFromPath(trayPath);
-  
+
   tray = new Tray(trayIcon);
-  
+
   const contextMenu = Menu.buildFromTemplate([
     {
       label: 'Open Clearsky',
@@ -77,7 +99,7 @@ async function startService(serviceName, port, image, env = {}) {
   return new Promise((resolve, reject) => {
     const containerName = `clearsky-${serviceName}`;
     const dataDir = path.join(process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE, '.clearsky', serviceName);
-    
+
     fs.mkdirSync(dataDir, { recursive: true });
 
     const envArgs = Object.entries(env)
@@ -119,6 +141,47 @@ async function importToImmich(zipPath) {
       }
       resolve(stdout.trim());
     });
+  });
+}
+
+async function runMigration(migrationName) {
+  return new Promise((resolve, reject) => {
+    try {
+      // Try to run migration from Nix build
+      const projectRoot = path.join(__dirname, '..');
+      const migrationPath = path.join(projectRoot, 'migrations', migrationName);
+      
+      // Check if migration exists as a Nix derivation
+      exec(`nix build ${migrationPath}#default -o /tmp/clearsky-migration 2>/dev/null`, (error) => {
+        if (error) {
+          // Fallback: run migration script directly if available
+          const scriptPath = path.join(migrationPath, 'bin', 'migrate');
+          if (fs.existsSync(scriptPath)) {
+            exec(scriptPath, (err, stdout, stderr) => {
+              if (err) {
+                reject(err);
+                return;
+              }
+              resolve(stdout.trim());
+            });
+          } else {
+            reject(new Error(`Migration ${migrationName} not found`));
+          }
+          return;
+        }
+
+        // Run the built migration
+        exec('/tmp/clearsky-migration/bin/migrate', (err, stdout, stderr) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+          resolve(stdout.trim());
+        });
+      });
+    } catch (error) {
+      reject(error);
+    }
   });
 }
 
@@ -184,7 +247,7 @@ ipcMain.on('import-photos', async (event, zipPath) => {
 ipcMain.on('start-tailscale', async (event, authKey) => {
   return new Promise((resolve, reject) => {
     const containerName = 'clearsky-tailscale';
-    const command = authKey 
+    const command = authKey
       ? `podman run -d --rm --name ${containerName} --cap-add=NET_ADMIN --cap-add=SYS_MODULE -v /dev/net/tun:/dev/net/tun -v /run:/run ${authKey ? `-e TS_AUTHKEY="${authKey}"` : ''} tailscale/tailscale:latest tailnet --state-dir=/run/tailscale`
       : `podman run -d --rm --name ${containerName} --cap-add=NET_ADMIN --cap-add=SYS_MODULE -v /dev/net/tun:/dev/net/tun -v /run:/run tailscale/tailscale:latest tailnet --state-dir=/run/tailscale --no-verbose`;
 
@@ -203,14 +266,28 @@ ipcMain.on('rollback', async (event, serviceName) => {
     await stopService(serviceName);
     const dataDir = path.join(process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE, '.clearsky', serviceName);
     const backupDir = `${dataDir}.backup`;
-    
+
     if (fs.existsSync(backupDir)) {
       fs.rmSync(dataDir, { recursive: true, force: true });
       fs.renameSync(backupDir, dataDir);
     }
-    
+
     event.sender.send('rollback-complete', { service: serviceName, success: true });
   } catch (error) {
     event.sender.send('rollback-error', { service: serviceName, error: error.message });
+  }
+});
+
+// IPC handlers for migrations
+ipcMain.handle('get-migrations', async () => {
+  return loadMigrations();
+});
+
+ipcMain.handle('run-migration', async (event, migrationName, options = {}) => {
+  try {
+    const result = await runMigration(migrationName, options);
+    return { success: true, result };
+  } catch (error) {
+    return { success: false, error: error.message };
   }
 });

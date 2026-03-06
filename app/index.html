@@ -302,7 +302,21 @@
           <h3>What is Clearsky?</h3>
           <p>Clearsky helps you migrate your data from cloud services to self-hosted, privacy-focused alternatives. Your data stays on your machine, under your control.</p>
         </div>
-        <p>Select the services you want to migrate from:</p>
+        
+        <!-- Migration Selector -->
+        <div style="margin: 20px 0;">
+          <label for="migration-select" style="display: block; margin-bottom: 10px; font-weight: 600;">
+            Select a migration:
+          </label>
+          <select id="migration-select" style="width: 100%; padding: 12px; border: 2px solid #87CEEB; border-radius: 8px; font-size: 1rem; background: white;">
+            <option value="">Loading migrations...</option>
+          </select>
+          <div id="migration-description" style="margin-top: 10px; padding: 10px; background: #f0f9ff; border-left: 3px solid #1a5f7a; border-radius: 0 8px 8px 0; display: none;">
+            <p style="color: #666; margin: 0;"></p>
+          </div>
+        </div>
+
+        <p style="margin-top: 20px;">Or select services manually:</p>
         <div class="checkbox-group" style="margin: 20px 0;">
           <label class="checkbox-option">
             <input type="checkbox" id="service-google-photos" value="google-photos">
@@ -419,12 +433,13 @@
   </div>
 
   <script>
-    const { ipcRenderer, remote } = require('electron');
+    const { ipcRenderer } = require('electron');
     const path = require('path');
     const fs = require('fs');
 
     let selectedFiles = [];
     let servicesSelected = [];
+    let selectedMigration = null;
     let progress = 0;
 
     // DOM Elements
@@ -439,6 +454,43 @@
     };
 
     const podmanWarning = document.getElementById('podman-warning');
+    const migrationSelect = document.getElementById('migration-select');
+    const migrationDescription = document.getElementById('migration-description');
+
+    // Load migrations from Nix registry
+    async function loadMigrations() {
+      try {
+        const migrations = await ipcRenderer.invoke('get-migrations');
+        
+        migrationSelect.innerHTML = '<option value="">Select a migration...</option>';
+        
+        Object.entries(migrations).forEach(([key, migration]) => {
+          const option = document.createElement('option');
+          option.value = key;
+          option.textContent = `${migration.name} (${migration.source} → ${migration.target})`;
+          migrationSelect.appendChild(option);
+        });
+
+        // Update description when selection changes
+        migrationSelect.addEventListener('change', (e) => {
+          const migration = migrations[e.target.value];
+          if (migration) {
+            selectedMigration = e.target.value;
+            migrationDescription.style.display = 'block';
+            migrationDescription.querySelector('p').textContent = migration.description;
+          } else {
+            selectedMigration = null;
+            migrationDescription.style.display = 'none';
+          }
+        });
+      } catch (error) {
+        console.log('Could not load migrations:', error);
+        // Fallback to hardcoded migration
+        migrationSelect.innerHTML = `
+          <option value="google-photos-to-immich">Google Photos to Immich</option>
+        `;
+      }
+    }
 
     // Check Podman status
     ipcRenderer.send('check-podman');
@@ -532,21 +584,44 @@
 
     // Import button
     document.getElementById('btn-import').addEventListener('click', async () => {
-      if (selectedFiles.length === 0) {
-        alert('Please select at least one ZIP file');
+      if (selectedFiles.length === 0 && !selectedMigration) {
+        alert('Please select at least one ZIP file or select a migration');
         return;
       }
 
       showStep('progress');
-      
+
+      // If a migration is selected, run it
+      if (selectedMigration) {
+        updateProgress(0, `Starting migration: ${selectedMigration}...`);
+        
+        try {
+          const result = await ipcRenderer.invoke('run-migration', selectedMigration, {
+            files: selectedFiles.map(f => f.path)
+          });
+          
+          if (result.success) {
+            updateProgress(100, 'Migration complete! Ready to preview.');
+            setTimeout(() => {
+              showStep('preview');
+            }, 1500);
+          } else {
+            updateProgress(0, `Error: ${result.error}`);
+          }
+        } catch (error) {
+          updateProgress(0, `Error: ${error.message}`);
+        }
+        return;
+      }
+
       // Start Immich service
       ipcRenderer.send('start-immich');
-      
+
       // Import files
       for (const file of selectedFiles) {
         progress = (selectedFiles.indexOf(file) / selectedFiles.length) * 100;
         updateProgress(progress, `Importing ${file.name}...`);
-        
+
         try {
           await ipcRenderer.invoke('import-photos', file.path);
           updateProgress(progress, `✓ ${file.name} imported successfully`);
@@ -554,9 +629,9 @@
           updateProgress(progress, `✗ Error importing ${file.name}: ${error.message}`);
         }
       }
-      
+
       updateProgress(100, 'Migration complete! Ready to preview.');
-      
+
       setTimeout(() => {
         showStep('preview');
       }, 1500);
@@ -613,6 +688,9 @@
         showStep('welcome');
       }
     });
+
+    // Initialize migration selector
+    loadMigrations();
 
     // Tray context menu
     ipcRenderer.on('podman-missing', (event, message) => {

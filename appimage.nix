@@ -1,4 +1,4 @@
-{ lib, stdenv, appimageTools, nodejs, electron, makeWrapper, podman, immich-go, tailscale }:
+{ lib, stdenv, appimageTools, nodejs, electron, makeWrapper, podman, immich-go, tailscale, getMigrations ? {} }:
 
 appimageTools.wrapAppImage {
   name = "clearsky";
@@ -15,13 +15,13 @@ appimageTools.wrapAppImage {
   extraInstallCommands = ''
     mkdir -p $out/share/clearsky
     cp -r $src/* $out/share/clearsky/
-    
+
     # Create launcher script
     makeWrapper ${nodejs}/bin/node $out/bin/clearsky \
       --add-flags "$out/share/clearsky/main.js" \
       --set NODE_PATH "$out/share/clearsky/node_modules" \
       --set PATH "${podman}/bin:${immich-go}/bin:${tailscale}/bin:$out/bin:$PATH"
-    
+
     chmod +x $out/share/clearsky/run.sh
   '';
 
@@ -31,7 +31,7 @@ appimageTools.wrapAppImage {
       Clearsky is a desktop application for migrating data from cloud services
       to self-hosted, privacy-focused alternatives. Built with Nix for reproducible
       builds and Electron for cross-platform UI.
-      
+
       Features:
       - Migration wizard for Google Photos, Drive, iCloud
       - Containerized services via Podman

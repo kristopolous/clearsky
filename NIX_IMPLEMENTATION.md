@@ -1,88 +1,158 @@
 # Clearsky: No More Clouds
 
-## NixOS Hackathon - Nix Implementation
+## NixOS Hackathon Implementation
 
-### The Nix Files (What We're Building For)
+### What Nix Actually Does
 
-These Nix expressions define a **reproducible AppImage build** that bundles all dependencies:
+This project uses Nix to create a **reproducible, self-contained AppImage**:
 
-| File | Purpose |
-|------|---------|
-| `flake.nix` | Nix flake entry point - defines inputs and outputs |
-| `appimage.nix` | AppImage wrapper - bundles Electron app + dependencies |
-| `default.nix` | Alternative entry point for non-flake Nix |
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Clearsky AppImage                        │
+├─────────────────────────────────────────────────────────────┤
+│  • Electron app (main.js, index.html)                       │
+│  • Node.js runtime                                          │
+│  • Podman (container runtime)                               │
+│  • immich-go (photo import)                                 │
+│  • tailscale (remote access)                                │
+│  • All shared libraries                                     │
+│  • Wrapper script (sets PATH, LD_LIBRARY_PATH)             │
+└─────────────────────────────────────────────────────────────┘
+```
 
-### How Nix Is Actually Used Here
+### Nix Files Explained
 
-**The key insight:** Nix doesn't just build the app - it **bundles all dependencies** into the AppImage:
+#### `flake.nix` - The Build Definition
 
 ```nix
-appimageTools.wrapAppImage {
-  src = ./app;  # Your Electron app
-  
-  extraPkgs = pkgs: [
-    podman      # Container runtime (bundled!)
-    immich-go   # Photo import tool (bundled!)
-    tailscale   # Remote access (bundled!)
-  ];
-  
-  # Nix creates a wrapper script that sets PATH to include these
+{
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
+  };
+
+  outputs = { self, nixpkgs }:
+    let
+      pkgs = import nixpkgs { system = "x86_64-linux"; };
+      clearsky-appimage = pkgs.callPackage ./appimage.nix {};
+    in {
+      packages.x86_64-linux.default = clearsky-appimage;
+    };
 }
 ```
 
-### Build the AppImage
+**What it does:**
+- Imports nixpkgs for x86_64-linux
+- Calls `appimage.nix` to build the AppImage
+- Exports it as `packages.default`
+
+#### `appimage.nix` - The AppImage Builder
+
+```nix
+{ lib, stdenv, appimageTools, nodejs, electron, makeWrapper, podman, immich-go, tailscale }:
+
+appimageTools.wrapAppImage {
+  name = "clearsky";
+  version = "1.0.0";
+  
+  src = ./app;  # Your Electron app
+  
+  extraPkgs = pkgs: [
+    podman      # Bundled into AppImage
+    immich-go   # Bundled into AppImage
+    tailscale   # Bundled into AppImage
+  ];
+  
+  extraInstallCommands = ''
+    # Create wrapper that sets PATH to include bundled tools
+    makeWrapper ${nodejs}/bin/node $out/bin/clearsky \
+      --add-flags "$out/share/clearsky/main.js" \
+      --set PATH "${podman}/bin:${immich-go}/bin:$PATH"
+  '';
+}
+```
+
+**What it does:**
+- Takes your Electron app
+- Wraps it with Podman, immich-go, tailscale
+- Creates a self-contained AppImage
+- Sets up PATH so bundled tools work
+
+#### `default.nix` - Alternative Entry Point
+
+```nix
+{ pkgs ? import <nixpkgs> {} }:
+
+pkgs.callPackage ./appimage.nix {}
+```
+
+**What it does:**
+- Same as flake.nix but uses `<nixpkgs>` syntax
+- Works without flakes enabled
+
+### Build Process
 
 ```bash
-# Using Nix flakes (recommended)
+# 1. Nix evaluates flake.nix
+# 2. Calls appimage.nix with all dependencies
+# 3. appimage.nix calls appimageTools.wrapAppImage
+# 4. Nix fetches all dependencies (podman, immich-go, etc.)
+# 5. Creates wrapper script that bundles everything
+# 6. AppImage is created with all dependencies
+
 nix build
-
-# Using nix-build
-nix-build -E 'with import <nixpkgs> {}; callPackage ./appimage.nix {}'
-
-# The AppImage is created with ALL dependencies bundled
+# Result: ./result/bin/clearsky (self-contained AppImage)
 ```
 
 ### What Gets Bundled
 
-| Dependency | Nix Package | Purpose |
-|------------|-------------|---------|
-| Node.js | `nodejs` | Electron runtime |
-| Electron | `electron` | Desktop framework |
-| Podman | `podman` | Container runtime |
-| immich-go | `immich-go` | Photo import tool |
-| tailscale | `tailscale` | Remote access |
+| Package | Purpose | Size Estimate |
+|---------|---------|---------------|
+| nodejs | Node.js runtime | ~50MB |
+| electron | Desktop framework | ~100MB |
+| podman | Container runtime | ~20MB |
+| immich-go | Photo import tool | ~5MB |
+| tailscale | Remote access | ~3MB |
+| Libraries | Shared libs | ~100MB |
+| **Total** | | **~280MB+** |
 
-### Why This Matters for NixOS Hackathon
+### Why This Is Better
 
-1. **Reproducibility** - Same build on every machine
-2. **Dependency Isolation** - No conflicts with system packages
-3. **Self-Contained** - Single AppImage file
-4. **Declarative** - Clear dependency list in Nix expressions
-5. **Atomic** - Easy version management via Nix
+| Approach | Reproducible? | Self-Contained? | NixOS Friendly? |
+|----------|--------------|-----------------|-----------------|
+| npm build | ❌ | ❌ | ❌ |
+| Nix build | ✅ | ✅ | ✅ |
 
-### Testing the Nix Build
+### For the NixOS Hackathon
+
+This implementation demonstrates:
+1. ✅ **Nix reproducibility** - Same build every time
+2. ✅ **Self-contained AppImage** - Works without user installing anything
+3. ✅ **Declarative dependencies** - Clear list in Nix expressions
+4. ✅ **Atomic updates** - Replace entire AppImage
+5. ✅ **Sandboxed builds** - No contamination from build host
+
+### Build Commands
 
 ```bash
-# Check if Nix is installed
-which nix
-
-# If Nix is installed, build
+# Build AppImage (Nix)
 nix build
 
-# Verify the AppImage
-file ./result/bin/clearsky
+# Build AppImage (Nix with explicit flake)
+nix build .#appimage
+
+# Enter dev shell
+nix-shell
+
+# Build with npm (fallback)
+cd app && npm run build
 ```
 
-### If Nix Is NOT Installed
+### Testing
 
-The project still works with npm:
 ```bash
-cd app
-npm install
-npm run build
-```
+# Test the AppImage
+./result/bin/clearsky --version
 
-But you miss out on:
-- Bundled dependencies (user needs Podman installed)
-- Reproducible builds
-- Nix-specific features
+# Check it's a valid AppImage
+appimage-info ./result/bin/clearsky
+```

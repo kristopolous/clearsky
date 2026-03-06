@@ -2,6 +2,8 @@
 
 A user-friendly desktop application that guides non-technical users through migrating their data from cloud services to self-hosted, privacy-focused alternatives.
 
+**Built for the NixOS Hackathon** - showcasing Nix's power for reproducible, self-contained desktop applications.
+
 ## Features
 
 - 🎯 **Simple Migration Wizard** - Step-by-step guided process for migrating data
@@ -10,29 +12,48 @@ A user-friendly desktop application that guides non-technical users through migr
 - 🔐 **Privacy First** - All data stays on your machine, no cloud required
 - 🔄 **Easy Rollback** - Undo migrations with a single click
 - 🌐 **Remote Access** - Tailscale integration for secure remote access
+- 📦 **Self-Contained AppImage** - Everything bundled via Nix, no system dependencies needed
 
 ## Prerequisites
 
 - Linux (Ubuntu 20.04+, NixOS, or other modern distro)
-- Podman 4.0+ (for containerized services)
-- Electron (for the desktop app)
+- Podman 4.0+ (for running containers)
+- 2GB free disk space
 
-## Quick Start
+## Installation
 
-### Option 1: Using AppImage
+### Option 1: Download Pre-Built AppImage
 
 ```bash
-# Download the AppImage
-wget https://github.com/clearsky/clearsky/releases/download/v1.0.0/Clearsky.AppImage
+# Download the AppImage (replace URL with actual release URL when available)
+wget https://github.com/clearsky/clearsky/releases/download/v1.0.0/Clearsky-1.0.0.AppImage
 
 # Make it executable
-chmod +x Clearsky.AppImage
+chmod +x Clearsky-1.0.0.AppImage
 
 # Run it
-./Clearsky.AppImage
+./Clearsky-1.0.0.AppImage
 ```
 
-### Option 2: From Source
+### Option 2: Build from Source with Nix (Recommended)
+
+```bash
+# Install Nix if you haven't already
+curl --proto '=https' --tlsv1.2 -sSf -L https://install.nixos.sh | sh
+
+# Clone the repository
+git clone https://github.com/clearsky/clearsky.git
+cd clearsky
+
+# Build the AppImage
+nix build
+
+# The AppImage will be at ./result/bin/clearsky
+cp ./result/bin/clearsky ~/Downloads/Clearsky.AppImage
+chmod +x ~/Downloads/Clearsky.AppImage
+```
+
+### Option 3: Build from Source without Nix
 
 ```bash
 # Clone the repository
@@ -40,25 +61,18 @@ git clone https://github.com/clearsky/clearsky.git
 cd clearsky
 
 # Install dependencies
-nix-shell
+cd app
+npm install
 
-# Build and run
-npm start
-```
-
-### Option 3: Using Nix
-
-```bash
 # Build the AppImage
-nix build .#appimage
+npm run build
 
-# Run the app
-./result/bin/clearsky
+# The AppImage will be in ./dist/
 ```
 
 ## Usage
 
-1. **Launch Clearsky** - Double-click the AppImage or run `clearsky`
+1. **Launch Clearsky** - Double-click the AppImage or run `./Clearsky.AppImage`
 2. **Select Services** - Choose which cloud services you want to migrate from
 3. **Export Data** - Follow the guide to export your data (e.g., from takeout.google.com)
 4. **Upload Files** - Drag and drop your exported ZIP files into the app
@@ -86,18 +100,21 @@ clearsky/
 │   ├── main.js            # Electron main process
 │   ├── index.html         # Electron renderer (UI)
 │   └── package.json       # Node.js dependencies
-├── flake.nix              # Nix flake configuration
-├── default.nix            # Nix build expression
-└── run.sh                 # AppImage launcher script
+├── flake.nix              # Nix flake configuration (reproducible builds)
+├── appimage.nix           # AppImage build definition
+├── default.nix            # Alternative Nix entry point
+├── run.sh                 # AppImage launcher script
+├── README.md              # This file
+└── INSTALLATION.md        # Detailed installation guide
 ```
 
 ## Development
 
 ### Prerequisites
 
-- Nix package manager
-- Node.js 18+
-- Podman
+- Nix package manager (for reproducible builds)
+- Node.js 18+ (for development)
+- Podman (for running containers)
 
 ### Setup
 
@@ -105,20 +122,28 @@ clearsky/
 # Enter development shell
 nix-shell
 
-# Install dependencies
+# Install npm dependencies
 npm install
 
 # Run in development mode
 npm start
 ```
 
-### Building AppImage
+### Building AppImage with Nix
 
 ```bash
-# Build using Nix
-nix build .#appimage
+# Build using Nix (bundles all dependencies)
+nix build
 
-# Or using npm
+# Or specify the output
+nix build .#appimage
+```
+
+### Building AppImage without Nix
+
+```bash
+cd app
+npm install
 npm run build
 ```
 
@@ -126,7 +151,8 @@ npm run build
 
 ### Podman not found
 
-Install Podman:
+Clearsky requires Podman to be installed on your system:
+
 ```bash
 # Ubuntu/Debian
 sudo apt install podman
@@ -136,6 +162,9 @@ sudo dnf install podman
 
 # Arch Linux
 sudo pacman -S podman
+
+# NixOS
+nix-env -iA nixos.podman
 ```
 
 ### Port 2283 already in use
@@ -144,8 +173,8 @@ sudo pacman -S podman
 # Check what's using the port
 lsof -i :2283
 
-# Stop the conflicting service or restart Podman
-podman restart clearsky-immich
+# Stop the conflicting service
+podman stop clearsky-immich
 ```
 
 ### Import fails
@@ -153,6 +182,15 @@ podman restart clearsky-immich
 - Make sure your ZIP file is from Google Takeout
 - Check that the file isn't corrupted
 - Try importing smaller batches if the file is very large
+
+### AppImage doesn't run on older Linux
+
+The AppImage requires a relatively recent Linux kernel. Try the npm build instead:
+
+```bash
+cd app
+npm run build
+```
 
 ## Contributing
 
@@ -175,6 +213,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Photo management with [Immich](https://immich.app/)
 - Remote access with [Tailscale](https://tailscale.com/)
 - Built for the [NixOS Hackathon](https://hackathon.nixos.org/)
+- Reproducible builds with [Nix](https://nixos.org/)
 
 ## Contact
 
