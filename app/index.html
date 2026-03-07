@@ -584,6 +584,9 @@
             <li><strong>Nextcloud:</strong> http://[TAILSCALE_IP]:8080</li>
             <li><strong>ownCloud:</strong> http://[TAILSCALE_IP]:8081</li>
             <li><strong>Home Assistant:</strong> http://[TAILSCALE_IP]:8123</li>
+            <li><strong>Ghost (Blog):</strong> http://[TAILSCALE_IP]:2368</li>
+            <li><strong>Ghost Admin:</strong> http://[TAILSCALE_IP]:2368/ghost</li>
+            <li><strong>Etherpad:</strong> http://[TAILSCALE_IP]:9001</li>
           </ul>
           <p style="margin-top: 10px; font-size: 0.9rem; color: #666;">
             💡 Tip: In the Tailscale app on your phone, tap your computer to see its IP address.
@@ -618,7 +621,9 @@
             <div style="padding: 5px 0; border-bottom: 1px solid #eee;">Immich: http://[IP]:2283</div>
             <div style="padding: 5px 0; border-bottom: 1px solid #eee;">Nextcloud: http://[IP]:8080</div>
             <div style="padding: 5px 0; border-bottom: 1px solid #eee;">ownCloud: http://[IP]:8081</div>
-            <div style="padding: 5px 0;">Home Assistant: http://[IP]:8123</div>
+            <div style="padding: 5px 0; border-bottom: 1px solid #eee;">Home Assistant: http://[IP]:8123</div>
+            <div style="padding: 5px 0; border-bottom: 1px solid #eee;">Ghost: http://[IP]:2368</div>
+            <div style="padding: 5px 0;">Etherpad: http://[IP]:9001</div>
           </div>
         </div>
         
@@ -973,7 +978,10 @@
         'google-docs-to-etherpad': { type: 'upload', title: 'Upload Google Docs Export', showApi: false },
         'nextcloud-setup': { type: 'setup', title: 'Set Up Nextcloud', text: 'This will start Nextcloud on http://localhost:8080' },
         'owncloud-setup': { type: 'setup', title: 'Set Up ownCloud', text: 'This will start ownCloud on http://localhost:8081' },
-        'homeassistant-setup': { type: 'setup', title: 'Set Up Home Assistant', text: 'This will start Home Assistant on http://localhost:8123 (may take a few minutes)' }
+        'homeassistant-setup': { type: 'setup', title: 'Set Up Home Assistant', text: 'This will start Home Assistant on http://localhost:8123 (may take a few minutes)' },
+        'ghost-setup': { type: 'setup', title: 'Set Up Ghost', text: 'This will start Ghost on http://localhost:2368 (includes MySQL database)' },
+        'substack-to-ghost': { type: 'upload', title: 'Migrate Substack to Ghost', showApi: false },
+        'medium-to-ghost': { type: 'upload', title: 'Migrate Medium to Ghost', showApi: false }
       };
 
       const config = migration[selectedMigration];
@@ -1218,7 +1226,10 @@
         'google-docs-to-etherpad': 'http://localhost:9001',
         'nextcloud-setup': 'http://localhost:8080',
         'owncloud-setup': 'http://localhost:8081',
-        'homeassistant-setup': 'http://localhost:8123'
+        'homeassistant-setup': 'http://localhost:8123',
+        'ghost-setup': 'http://localhost:2368',
+        'substack-to-ghost': 'http://localhost:2368',
+        'medium-to-ghost': 'http://localhost:2368'
       };
       const url = serviceUrls[selectedMigration] || 'http://localhost:2283';
       require('open')(url);

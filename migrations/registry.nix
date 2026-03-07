@@ -23,6 +23,18 @@ let
     homeassistant-setup = pkgs.callPackage ./homeassistant-setup/migrate.nix {
       inherit (harnesses) setup-homeassistant;
     };
+
+    ghost-setup = pkgs.callPackage ./ghost-setup/migrate.nix {
+      inherit (harnesses) setup-ghost;
+    };
+
+    substack-to-ghost = pkgs.callPackage ./substack-to-ghost/migrate.nix {
+      inherit (harnesses) download extract import-ghost;
+    };
+
+    medium-to-ghost = pkgs.callPackage ./medium-to-ghost/migrate.nix {
+      inherit (harnesses) download extract import-ghost;
+    };
   };
 in {
   getMigrations = migrations;

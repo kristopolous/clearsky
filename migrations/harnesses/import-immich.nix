@@ -33,7 +33,7 @@ pkgs.writeShellScriptBin "import-immich" ''
     # Start Immich container using run-container harness
     ${run-container}/bin/run-container \
       --name immich \
-      --image ghcr.io/immich-app/immich-server:latest \
+      --image ghcr.io/immich-app/immich-server:release \
       --port "$PORT" \
       --volume "$DATA_DIR:/mnt/data"
 
