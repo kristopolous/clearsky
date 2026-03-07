@@ -1,10 +1,12 @@
 const { execSync } = require('child_process');
+const Config = require('./config');
 
 /**
  * Simple bootstrap manager - detects available tools
  */
 class Bootstrap {
   constructor() {
+    this.config = new Config();
     this.platform = process.platform;
     this.runtime = this.detectRuntime();
     this.hasNix = this.checkCommand('nix');
@@ -24,9 +26,25 @@ class Bootstrap {
 
   /**
    * Detect available container runtime
-   * Priority: OrbStack > Podman > Docker
+   * Respects config, or auto-detects in priority order
    */
   detectRuntime() {
+    const configRuntime = this.config.getRuntime();
+    
+    // If config specifies runtime, use it
+    if (configRuntime !== 'auto') {
+      console.log(`Using runtime from config: ${configRuntime}`);
+      if (this.checkCommand(configRuntime)) {
+        try {
+          execSync(`${configRuntime} --version`, { stdio: 'ignore' });
+          return configRuntime;
+        } catch (e) {
+          console.warn(`Configured runtime '${configRuntime}' not working, auto-detecting...`);
+        }
+      }
+    }
+
+    // Auto-detect in priority order
     const runtimes = [
       { cmd: 'orb', name: 'orbstack' },
       { cmd: 'podman', name: 'podman' },
@@ -38,6 +56,7 @@ class Bootstrap {
         // Verify it's actually working
         try {
           execSync(`${cmd} --version`, { stdio: 'ignore' });
+          console.log(`Auto-detected runtime: ${name}`);
           return name;
         } catch (e) {}
       }
@@ -95,6 +114,7 @@ class Bootstrap {
       ready: this.runtime !== null,
       runtime: this.runtime,
       nix: this.hasNix,
+      config: this.config.getAll(),
       instructions: this.runtime ? null : this.getInstallInstructions()
     };
   }
