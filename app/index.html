@@ -900,17 +900,14 @@
       googleDocsGuide.style.display = 'none';
       
       if (servicesSelected.includes('google-photos')) {
-        // Show API setup for Google Photos
-        guideContainer.innerHTML = `
-          <div class="info-box" style="border-left-color: #4CAF50; background: #e8f5e9; margin-top: 20px;">
-            <p><strong>💡 Tip:</strong> For automatic download, use the <strong>migration dropdown</strong> at the top of this page and select "Google Photos to Immich".</p>
-            <p style="margin-top: 10px; font-size: 0.9rem;">Or continue below to manually export from Google Takeout.</p>
-          </div>
-        `;
+        // Show API setup for Google Photos - with direct links
+        apiKeySetup.style.display = 'block';
+        guideContainer.innerHTML = '';
         // Show Continue button
         document.getElementById('btn-continue-guide').style.display = 'inline-block';
       } else if (servicesSelected.includes('google-drive')) {
-        guideContainer.innerHTML = '<p><strong>Google Drive selected</strong> - Export from takeout.google.com</p>';
+        googleDocsGuide.style.display = 'block';
+        guideContainer.innerHTML = '';
         document.getElementById('btn-continue-guide').style.display = 'inline-block';
       } else if (servicesSelected.includes('icloud')) {
         guideContainer.innerHTML = '<p><strong>iCloud selected</strong> - Export from iCloud.com</p>';
