@@ -7,6 +7,10 @@ let
     google-photos-to-immich = pkgs.callPackage ./google-photos-to-immich/migrate.nix {
       inherit (harnesses) download extract import-immich;
     };
+
+    google-docs-to-etherpad = pkgs.callPackage ./google-docs-to-etherpad/migrate.nix {
+      inherit (harnesses) download extract import-etherpad;
+    };
   };
 in {
   getMigrations = migrations;

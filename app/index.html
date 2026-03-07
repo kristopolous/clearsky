@@ -348,15 +348,72 @@
 
       <div id="step-guide" class="step">
         <h2>Export Your Data</h2>
-        <div class="info-box">
-          <h3>For Google Photos:</h3>
-          <ol>
-            <li>Go to <a href="https://takeout.google.com" target="_blank" style="color: #1a5f7a;">takeout.google.com</a></li>
-            <li>Select "Photos" and configure your export</li>
-            <li>Choose "Export once" and download your ZIP file</li>
-            <li>Return here when ready</li>
-          </ol>
+        
+        <!-- API Key Setup for Google Photos -->
+        <div id="api-key-setup" style="display: none;">
+          <div class="info-box">
+            <h3>🔑 Set Up Google Photos API Access</h3>
+            <p>To automatically download your photos, you'll need a Google Photos API key. Follow these steps:</p>
+            <ol style="margin-top: 15px; line-height: 1.8;">
+              <li>Go to the <a href="https://console.cloud.google.com/" target="_blank" style="color: #1a5f7a;">Google Cloud Console</a></li>
+              <li>Create a new project or select an existing one</li>
+              <li>Enable the <strong>Google Photos Library API</strong></li>
+              <li>Go to <strong>Credentials</strong> → <strong>Create Credentials</strong> → <strong>API Key</strong></li>
+              <li>Copy your API key and paste it below</li>
+            </ol>
+            <p style="margin-top: 15px;"><strong>Note:</strong> The API key allows Clearsky to download your photos automatically. Your key is stored locally and never sent to any external server.</p>
+          </div>
+          
+          <div style="margin: 20px 0;">
+            <label for="google-api-key" style="display: block; margin-bottom: 8px; font-weight: 600;">
+              Google Photos API Key:
+            </label>
+            <input type="password" id="google-api-key" 
+              placeholder="Paste your API key here (e.g., AIzaSy...)" 
+              style="width: 100%; padding: 12px; border: 2px solid #87CEEB; border-radius: 8px; font-size: 1rem; font-family: monospace;">
+            <p style="margin-top: 8px; color: #666; font-size: 0.9rem;">
+              🔒 Your API key is stored locally and only used for downloading your photos
+            </p>
+          </div>
+          
+          <div style="margin: 15px 0;">
+            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+              <input type="checkbox" id="use-api-key" checked>
+              <span>Use API key for automatic download (recommended)</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; margin-top: 8px;">
+              <input type="checkbox" id="use-manual-export">
+              <span>I'll manually export from Google Takeout instead</span>
+            </label>
+          </div>
         </div>
+
+        <!-- Manual Export Guide -->
+        <div id="manual-export-guide">
+          <div class="info-box">
+            <h3>For Google Photos (Manual Export):</h3>
+            <ol>
+              <li>Go to <a href="https://takeout.google.com" target="_blank" style="color: #1a5f7a;">takeout.google.com</a></li>
+              <li>Select "Photos" and configure your export</li>
+              <li>Choose "Export once" and download your ZIP file</li>
+              <li>Return here when ready</li>
+            </ol>
+          </div>
+        </div>
+
+        <!-- Google Docs Guide -->
+        <div id="google-docs-guide" style="display: none;">
+          <div class="info-box">
+            <h3>For Google Docs (Manual Export):</h3>
+            <ol>
+              <li>Go to <a href="https://takeout.google.com" target="_blank" style="color: #1a5f7a;">takeout.google.com</a></li>
+              <li>Deselect all, then select only "Drive" or "Docs"</li>
+              <li>Choose format: HTML or plain text</li>
+              <li>Download your ZIP file and return here</li>
+            </ol>
+          </div>
+        </div>
+
         <div id="service-specific-guide"></div>
         <button id="btn-back-guide" class="btn btn-secondary">Back</button>
         <button id="btn-continue-guide" class="btn btn-primary" disabled>Continue</button>
@@ -441,6 +498,8 @@
     let servicesSelected = [];
     let selectedMigration = null;
     let progress = 0;
+    let apiKey = '';
+    let useManualExport = false;
 
     // DOM Elements
     const steps = {
@@ -456,14 +515,21 @@
     const podmanWarning = document.getElementById('podman-warning');
     const migrationSelect = document.getElementById('migration-select');
     const migrationDescription = document.getElementById('migration-description');
+    const apiKeySetup = document.getElementById('api-key-setup');
+    const manualExportGuide = document.getElementById('manual-export-guide');
+    const googleDocsGuide = document.getElementById('google-docs-guide');
+    const serviceSpecificGuide = document.getElementById('service-specific-guide');
+    const googleApiKeyInput = document.getElementById('google-api-key');
+    const useApiKeyCheckbox = document.getElementById('use-api-key');
+    const useManualExportCheckbox = document.getElementById('use-manual-export');
 
     // Load migrations from Nix registry
     async function loadMigrations() {
       try {
         const migrations = await ipcRenderer.invoke('get-migrations');
-        
+
         migrationSelect.innerHTML = '<option value="">Select a migration...</option>';
-        
+
         Object.entries(migrations).forEach(([key, migration]) => {
           const option = document.createElement('option');
           option.value = key;
@@ -478,6 +544,7 @@
             selectedMigration = e.target.value;
             migrationDescription.style.display = 'block';
             migrationDescription.querySelector('p').textContent = migration.description;
+            updateGuideForMigration(migration);
           } else {
             selectedMigration = null;
             migrationDescription.style.display = 'none';
@@ -491,6 +558,50 @@
         `;
       }
     }
+
+    // Update guide based on selected migration
+    function updateGuideForMigration(migration) {
+      if (!migration) return;
+
+      // Reset all guides
+      apiKeySetup.style.display = 'none';
+      manualExportGuide.style.display = 'none';
+      googleDocsGuide.style.display = 'none';
+      serviceSpecificGuide.innerHTML = '';
+
+      if (migration.target === 'immich' && migration.source === 'google-photos') {
+        // Show API key setup for Google Photos
+        apiKeySetup.style.display = 'block';
+        manualExportGuide.style.display = 'block';
+        serviceSpecificGuide.innerHTML = '<p><strong>Google Photos selected</strong> - Use API key for automatic download or manually export from takeout.google.com</p>';
+      } else if (migration.target === 'etherpad' && migration.source === 'google-docs') {
+        // Show manual export guide for Google Docs
+        googleDocsGuide.style.display = 'block';
+        serviceSpecificGuide.innerHTML = '<p><strong>Google Docs selected</strong> - Export from takeout.google.com</p>';
+      }
+    }
+
+    // API key toggle handlers
+    useApiKeyCheckbox?.addEventListener('change', () => {
+      if (useApiKeyCheckbox.checked) {
+        useManualExportCheckbox.checked = false;
+        useManualExport = false;
+        googleApiKeyInput.disabled = false;
+      }
+    });
+
+    useManualExportCheckbox?.addEventListener('change', () => {
+      if (useManualExportCheckbox.checked) {
+        useApiKeyCheckbox.checked = false;
+        useManualExport = true;
+        googleApiKeyInput.disabled = true;
+      }
+    });
+
+    // Save API key when changed
+    googleApiKeyInput?.addEventListener('input', () => {
+      apiKey = googleApiKeyInput.value.trim();
+    });
 
     // Check Podman status
     ipcRenderer.send('check-podman');
@@ -594,12 +705,25 @@
       // If a migration is selected, run it
       if (selectedMigration) {
         updateProgress(0, `Starting migration: ${selectedMigration}...`);
-        
+
+        // Prepare migration options
+        const options = {
+          files: selectedFiles.map(f => f.path)
+        };
+
+        // Add API key for Google Photos migration
+        if (selectedMigration === 'google-photos-to-immich' && !useManualExport && apiKey) {
+          options.apiKey = apiKey;
+          updateProgress(0, 'Starting automatic download from Google Photos API...');
+        } else if (selectedMigration === 'google-photos-to-immich' && !useManualExport && !apiKey) {
+          alert('Please enter your Google Photos API key or select manual export option');
+          showStep('guide');
+          return;
+        }
+
         try {
-          const result = await ipcRenderer.invoke('run-migration', selectedMigration, {
-            files: selectedFiles.map(f => f.path)
-          });
-          
+          const result = await ipcRenderer.invoke('run-migration', selectedMigration, options);
+
           if (result.success) {
             updateProgress(100, 'Migration complete! Ready to preview.');
             setTimeout(() => {

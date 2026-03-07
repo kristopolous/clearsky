@@ -144,25 +144,46 @@ async function importToImmich(zipPath) {
   });
 }
 
-async function runMigration(migrationName) {
+async function runMigration(migrationName, options = {}) {
   return new Promise((resolve, reject) => {
     try {
-      // Try to run migration from Nix build
+      // Get migration path
       const projectRoot = path.join(__dirname, '..');
       const migrationPath = path.join(projectRoot, 'migrations', migrationName);
       
-      // Check if migration exists as a Nix derivation
+      // Set up environment variables for the migration
+      const env = { ...process.env };
+      
+      // Pass API key for Google Photos migration
+      if (options.apiKey) {
+        env.GOOGLE_PHOTOS_API_KEY = options.apiKey;
+      }
+      
+      // Pass ZIP file path if provided
+      if (options.files && options.files.length > 0) {
+        env.GOOGLE_PHOTOS_ZIP = options.files[0];
+      }
+
+      // Try to build and run migration from Nix
       exec(`nix build ${migrationPath}#default -o /tmp/clearsky-migration 2>/dev/null`, (error) => {
         if (error) {
-          // Fallback: run migration script directly if available
+          // Fallback: check if migration script exists locally
           const scriptPath = path.join(migrationPath, 'bin', 'migrate');
           if (fs.existsSync(scriptPath)) {
-            exec(scriptPath, (err, stdout, stderr) => {
+            const child = exec(scriptPath, { env }, (err, stdout, stderr) => {
               if (err) {
                 reject(err);
                 return;
               }
               resolve(stdout.trim());
+            });
+            
+            // Stream output to renderer
+            child.stdout.on('data', (data) => {
+              console.log(data.toString());
+            });
+            child.stderr.on('data', (data) => {
+              console.error(data.toString());
             });
           } else {
             reject(new Error(`Migration ${migrationName} not found`));
@@ -170,13 +191,21 @@ async function runMigration(migrationName) {
           return;
         }
 
-        // Run the built migration
-        exec('/tmp/clearsky-migration/bin/migrate', (err, stdout, stderr) => {
+        // Run the built migration with environment variables
+        const child = exec('/tmp/clearsky-migration/bin/migrate', { env }, (err, stdout, stderr) => {
           if (err) {
             reject(err);
             return;
           }
           resolve(stdout.trim());
+        });
+        
+        // Stream output to renderer
+        child.stdout.on('data', (data) => {
+          console.log(data.toString());
+        });
+        child.stderr.on('data', (data) => {
+          console.error(data.toString());
         });
       });
     } catch (error) {
