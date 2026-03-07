@@ -1,0 +1,50 @@
+graph TB
+    subgraph "User Layer"
+        User[User]
+        App[Clearsky AppImage]
+    end
+
+    subgraph "Application Layer"
+        Electron[Electron Main Process]
+        IPC[IPC Handlers]
+        MigrationLoader[Migration Loader]
+    end
+
+    subgraph "Migration Framework"
+        Registry[Migration Registry]
+        Harnesses[Migration Harnesses]
+        GooglePhotos[Google Photos Migration]
+    end
+
+    subgraph "Service Layer"
+        Immich[Immich Container]
+        Tailscale[Tailscale Container]
+        Podman[Podman Runtime]
+    end
+
+    subgraph "Data Layer"
+        ImmichData[~/.clearsky/immich]
+        TailscaleData[~/.clearsky/tailscale]
+    end
+
+    subgraph "External Services"
+        GooglePhotosAPI[Google Photos API]
+        ImmichAPI[Immich API :2283]
+    end
+
+    User --> App
+    App --> Electron
+    Electron --> IPC
+    Electron --> MigrationLoader
+    MigrationLoader --> Registry
+    Registry --> Harnesses
+    Registry --> GooglePhotos
+    GooglePhotos --> Immich
+    GooglePhotos --> GooglePhotosAPI
+    Immich --> ImmichData
+    Immich --> ImmichAPI
+    Tailscale --> TailscaleData
+    Podman --> Immich
+    Podman --> Tailscale
+    IPC --> Podman
+    IPC --> GooglePhotos
