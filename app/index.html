@@ -1251,6 +1251,215 @@
     ipcRenderer.on('podman-missing', (event, message) => {
       console.log('Podman missing:', message);
     });
+
+    // Diagnostics modal
+    const diagnosticsModal = document.getElementById('diagnostics-modal');
+    const diagnosticsContent = document.getElementById('diagnostics-content');
+
+    document.getElementById('btn-diagnostics')?.addEventListener('click', () => {
+      diagnosticsModal.style.display = 'block';
+      loadDiagnostics();
+    });
+
+    document.getElementById('btn-close-diagnostics')?.addEventListener('click', () => {
+      diagnosticsModal.style.display = 'none';
+    });
+
+    document.getElementById('btn-refresh-diagnostics')?.addEventListener('click', () => {
+      loadDiagnostics();
+    });
+
+    document.getElementById('btn-export-diagnostics')?.addEventListener('click', async () => {
+      const text = await getDiagnosticsText();
+      await navigator.clipboard.writeText(text);
+      alert('Diagnostics copied to clipboard!');
+    });
+
+    // Close modal when clicking outside
+    diagnosticsModal?.addEventListener('click', (e) => {
+      if (e.target === diagnosticsModal) {
+        diagnosticsModal.style.display = 'none';
+      }
+    });
+
+    // Load diagnostics
+    async function loadDiagnostics() {
+      diagnosticsContent.innerHTML = '<p>Loading system information...</p>';
+      
+      try {
+        const info = await ipcRenderer.invoke('get-diagnostics');
+        diagnosticsContent.innerHTML = renderDiagnostics(info);
+      } catch (error) {
+        diagnosticsContent.innerHTML = `<p style="color: #f44336;">Error loading diagnostics: ${error.message}</p>`;
+      }
+    }
+
+    // Render diagnostics HTML
+    function renderDiagnostics(info) {
+      const sections = [];
+
+      // System Info
+      sections.push(`
+        <div class="info-box" style="border-left-color: #2196F3; background: #e3f2fd;">
+          <h3>💻 System Information</h3>
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr><td style="padding: 5px 0;"><strong>OS:</strong></td><td>${info.os || 'Unknown'}</td></tr>
+            <tr><td style="padding: 5px 0;"><strong>Architecture:</strong></td><td>${info.arch || 'Unknown'}</td></tr>
+            <tr><td style="padding: 5px 0;"><strong>Node.js:</strong></td><td><code>${info.nodeVersion || 'Unknown'}</code></td></tr>
+            <tr><td style="padding: 5px 0;"><strong>Electron:</strong></td><td><code>${info.electronVersion || 'Unknown'}</code></td></tr>
+          </table>
+        </div>
+      `);
+
+      // Nix Information
+      if (info.nix) {
+        sections.push(`
+          <div class="info-box" style="border-left-color: #7B61FF; background: #f3f0ff;">
+            <h3>❄️ Nix</h3>
+            ${info.nix.installed 
+              ? `<p style="color: #4CAF50;">✅ Nix is installed</p>`
+              : `<p style="color: #ff9800;">⚠️ Nix is not installed (running in fallback mode)</p>`
+            }
+            ${info.nix.version ? `<p><strong>Version:</strong> <code>${info.nix.version}</code></p>` : ''}
+            ${info.nix.flakes ? `<p><strong>Flakes:</strong> ${info.nix.flakes}</p>` : ''}
+          </div>
+        `);
+      }
+
+      // Container Runtime
+      if (info.containerRuntime) {
+        const runtimeColors = {
+          'nix-containers': '#7B61FF',
+          'podman': '#2196F3',
+          'docker': '#FF9800'
+        };
+        sections.push(`
+          <div class="info-box" style="border-left-color: ${runtimeColors[info.containerRuntime.name] || '#666'}; background: #f5f5f5;">
+            <h3>🐳 Container Runtime</h3>
+            <p><strong>Active:</strong> <code>${info.containerRuntime.name || 'Unknown'}</code></p>
+            ${info.containerRuntime.version ? `<p><strong>Version:</strong> <code>${info.containerRuntime.version}</code></p>` : ''}
+            ${info.containerRuntime.available ? `<p><strong>Also available:</strong> ${info.containerRuntime.available.join(', ')}</p>` : ''}
+          </div>
+        `);
+      }
+
+      // Migrations
+      if (info.migrations && info.migrations.length > 0) {
+        sections.push(`
+          <div class="info-box" style="border-left-color: #4CAF50; background: #e8f5e9;">
+            <h3>🔄 Available Migrations</h3>
+            <ul style="margin: 10px 0; padding-left: 20px;">
+              ${info.migrations.map(m => `
+                <li style="padding: 3px 0;">
+                  <strong>${m.name}</strong><br>
+                  <span style="color: #666; font-size: 0.9rem;">${m.source} → ${m.target}</span><br>
+                  <code style="font-size: 0.8rem;">${m.description}</code>
+                </li>
+              `).join('')}
+            </ul>
+          </div>
+        `);
+      }
+
+      // Running Services
+      if (info.services && info.services.length > 0) {
+        sections.push(`
+          <div class="info-box" style="border-left-color: #4CAF50; background: #e8f5e9;">
+            <h3>▶️ Running Services</h3>
+            <ul style="margin: 10px 0; padding-left: 20px;">
+              ${info.services.map(s => `
+                <li style="padding: 3px 0;">
+                  <strong>${s.name}</strong> - <code>${s.url}</code>
+                </li>
+              `).join('')}
+            </ul>
+          </div>
+        `);
+      } else {
+        sections.push(`
+          <div class="info-box" style="border-left-color: #ff9800; background: #fff3e0;">
+            <h3>▶️ Running Services</h3>
+            <p>No services currently running. Start a migration to launch services.</p>
+          </div>
+        `);
+      }
+
+      // Architecture Diagram
+      sections.push(`
+        <div class="info-box" style="border-left-color: #1a5f7a; background: #f0f9ff;">
+          <h3>🏗️ Architecture</h3>
+          <pre style="background: white; padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.6;">
+${info.architecture || `
+Clearsky (Electron App)
+│
+├── Migration Framework (Nix flakes)
+│   ├── google-photos-to-immich
+│   ├── google-docs-to-etherpad
+│   ├── nextcloud-setup
+│   ├── owncloud-setup
+│   └── homeassistant-setup
+│
+├── Harnesses (Reusable components)
+│   ├── download
+│   ├── extract
+│   ├── import-immich
+│   ├── import-etherpad
+│   ├── setup-nextcloud
+│   ├── setup-owncloud
+│   ├── setup-homeassistant
+│   └── run-container (auto-detects runtime)
+│
+└── Container Runtime
+    ├── nix-containers (preferred on NixOS)
+    ├── podman (fallback)
+    └── docker (last resort)
+`}
+          </pre>
+        </div>
+      `);
+
+      return sections.join('\n\n');
+    }
+
+    // Get plain text diagnostics for export
+    async function getDiagnosticsText() {
+      const info = await ipcRenderer.invoke('get-diagnostics');
+      let text = '=== Clearsky System Diagnostics ===\n\n';
+      
+      text += `System: ${info.os || 'Unknown'} (${info.arch || 'Unknown'})\n`;
+      text += `Node.js: ${info.nodeVersion || 'Unknown'}\n`;
+      text += `Electron: ${info.electronVersion || 'Unknown'}\n\n`;
+      
+      if (info.nix) {
+        text += `Nix: ${info.nix.installed ? 'Installed' : 'Not installed'}\n`;
+        if (info.nix.version) text += `  Version: ${info.nix.version}\n`;
+        text += '\n';
+      }
+      
+      if (info.containerRuntime) {
+        text += `Container Runtime: ${info.containerRuntime.name || 'Unknown'}\n`;
+        if (info.containerRuntime.version) text += `  Version: ${info.containerRuntime.version}\n`;
+        text += '\n';
+      }
+      
+      if (info.migrations && info.migrations.length > 0) {
+        text += 'Available Migrations:\n';
+        info.migrations.forEach(m => {
+          text += `  - ${m.name} (${m.source} → ${m.target})\n`;
+        });
+        text += '\n';
+      }
+      
+      if (info.services && info.services.length > 0) {
+        text += 'Running Services:\n';
+        info.services.forEach(s => {
+          text += `  - ${s.name} at ${s.url}\n`;
+        });
+        text += '\n';
+      }
+      
+      return text;
+    }
   </script>
 </body>
 </html>

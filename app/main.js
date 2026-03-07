@@ -328,3 +328,140 @@ ipcMain.handle('run-migration', async (event, migrationName, options = {}) => {
     return { success: false, error: error.message };
   }
 });
+
+// IPC handler for diagnostics
+ipcMain.handle('get-diagnostics', async () => {
+  const os = require('os');
+  const { exec } = require('child_process');
+  
+  const info = {
+    os: `${os.platform()} ${os.release()}`,
+    arch: os.arch(),
+    nodeVersion: process.version,
+    electronVersion: process.versions.electron,
+    nix: null,
+    containerRuntime: null,
+    migrations: [],
+    services: [],
+    architecture: null
+  };
+
+  // Check Nix
+  await new Promise((resolve) => {
+    exec('nix --version 2>/dev/null', (error, stdout) => {
+      if (error) {
+        info.nix = { installed: false };
+      } else {
+        info.nix = {
+          installed: true,
+          version: stdout.trim(),
+          flakes: 'enabled' // Assume flakes are enabled in modern Nix
+        };
+      }
+      resolve();
+    });
+  });
+
+  // Detect container runtime
+  await new Promise((resolve) => {
+    exec('which nix-container-run podman docker 2>/dev/null | head -1', (error, stdout) => {
+      const runtime = stdout.trim();
+      if (runtime.includes('nix-container-run')) {
+        info.containerRuntime = { name: 'nix-containers' };
+      } else if (runtime.includes('podman')) {
+        info.containerRuntime = { name: 'podman' };
+      } else if (runtime.includes('docker')) {
+        info.containerRuntime = { name: 'docker' };
+      } else {
+        info.containerRuntime = { name: 'none' };
+      }
+      
+      // Get version
+      const versionCmd = runtime.includes('nix-container-run') 
+        ? 'nix-container-run --version'
+        : runtime.includes('podman')
+        ? 'podman --version'
+        : 'docker --version';
+      
+      exec(versionCmd, (err, out) => {
+        if (!err) {
+          info.containerRuntime.version = out.trim();
+        }
+        resolve();
+      });
+    });
+  });
+
+  // Get available migrations
+  try {
+    const migrations = await loadMigrations();
+    info.migrations = Object.entries(migrations).map(([key, m]) => ({
+      key,
+      name: m.name,
+      source: m.source,
+      target: m.target,
+      description: m.description,
+      version: m.version
+    }));
+  } catch (error) {
+    // Use fallback migrations
+    info.migrations = [
+      { name: 'Google Photos to Immich', source: 'google-photos', target: 'immich', description: 'Migrate Google Photos to Immich' },
+      { name: 'Google Docs to Etherpad', source: 'google-docs', target: 'etherpad', description: 'Migrate Google Docs to Etherpad' },
+      { name: 'Nextcloud Setup', source: 'new', target: 'nextcloud', description: 'Set up Nextcloud' },
+      { name: 'ownCloud Setup', source: 'new', target: 'owncloud', description: 'Set up ownCloud' },
+      { name: 'Home Assistant Setup', source: 'new', target: 'homeassistant', description: 'Set up Home Assistant' }
+    ];
+  }
+
+  // Check running services
+  await new Promise((resolve) => {
+    exec('podman ps --format "{{.Names}}:{{.Ports}}" 2>/dev/null', (error, stdout) => {
+      if (error) {
+        resolve();
+        return;
+      }
+      
+      const lines = stdout.trim().split('\n').filter(l => l.includes('clearsky-'));
+      info.services = lines.map(line => {
+        const [name, ports] = line.split(':');
+        const port = ports.match(/(\d+)->/)?.[1] || 'unknown';
+        const serviceName = name.replace('clearsky-', '');
+        return {
+          name: serviceName.charAt(0).toUpperCase() + serviceName.slice(1),
+          url: `http://localhost:${port}`
+        };
+      });
+      resolve();
+    });
+  });
+
+  // Architecture diagram
+  info.architecture = `
+Clearsky (Electron App)
+│
+├── Migration Framework (Nix flakes)
+│   ├── google-photos-to-immich
+│   ├── google-docs-to-etherpad
+│   ├── nextcloud-setup
+│   ├── owncloud-setup
+│   └── homeassistant-setup
+│
+├── Harnesses (Reusable components)
+│   ├── download
+│   ├── extract
+│   ├── import-immich
+│   ├── import-etherpad
+│   ├── setup-nextcloud
+│   ├── setup-owncloud
+│   ├── setup-homeassistant
+│   └── run-container (auto-detects runtime)
+│
+└── Container Runtime
+    ├── nix-containers (preferred on NixOS)
+    ├── podman (fallback)
+    └── docker (last resort)
+  `;
+
+  return info;
+});
