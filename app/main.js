@@ -1,11 +1,13 @@
-const { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, shell } = require('electron');
+const { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, shell, dialog } = require('electron');
 const path = require('path');
 const { exec, execSync } = require('child_process');
 const fs = require('fs');
 const os = require('os');
+const Bootstrap = require('./bootstrap');
 
 let mainWindow = null;
 let tray = null;
+let bootstrap = null;
 const isDev = process.env.NODE_ENV === 'development';
 
 // Platform detection
@@ -15,6 +17,42 @@ const isLinux = process.platform === 'linux';
 // Get home directory (handles macOS/Linux differences)
 const homeDir = os.homedir();
 const clearskyDataDir = path.join(homeDir, '.clearsky');
+
+// Initialize bootstrap
+function initBootstrap() {
+  bootstrap = new Bootstrap();
+  const status = bootstrap.isReady();
+  
+  if (!status.ready) {
+    showRuntimeMissingDialog(status.instructions);
+    return false;
+  }
+  
+  console.log(`Using container runtime: ${status.runtime}`);
+  console.log(`Nix available: ${status.nix ? 'yes' : 'no'}`);
+  return true;
+}
+
+function showRuntimeMissingDialog(instructions) {
+  const { recommended, alternative } = instructions;
+  
+  dialog.showMessageBox({
+    type: 'warning',
+    title: 'Container Runtime Required',
+    message: `${recommended.name} or ${alternative.name} is required`,
+    detail: `Clearsky needs a container runtime to run services.\n\nRecommended: ${recommended.name}\n${recommended.note}\n\nInstall command:\n${recommended.cmd}\n\nOr use: ${alternative.name}\n${alternative.note}`,
+    buttons: [`Install ${recommended.name}`, `Learn More`, 'Quit'],
+    defaultId: 0,
+    cancelId: 2
+  }).then(result => {
+    if (result.response === 0) {
+      shell.openExternal(recommended.url);
+    } else if (result.response === 1) {
+      shell.openExternal(alternative.url);
+    }
+    app.quit();
+  });
+}
 
 // Load migrations from Nix registry
 function loadMigrations() {
@@ -286,14 +324,13 @@ async function runMigration(migrationName, options = {}) {
 }
 
 app.on('ready', () => {
+  // Check dependencies first
+  if (!initBootstrap()) {
+    return; // Will quit after showing dialog
+  }
+  
   createWindow();
   createTray();
-
-  checkPodmanInstalled().catch(error => {
-    if (mainWindow) {
-      mainWindow.webContents.send('podman-missing', error.message);
-    }
-  });
 });
 
 app.on('window-all-closed', () => {
