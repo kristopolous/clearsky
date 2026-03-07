@@ -19,6 +19,7 @@
 - 📦 **Self-Contained AppImage** - Everything bundled via Nix, no system dependencies needed
 
 ## Architecture
+<img width="2752" height="1536" alt="clearsky" src="https://github.com/user-attachments/assets/a4101fa3-a52f-4064-83ad-de586918b8c8" />
 
 Clearsky uses a **modular migration framework** built on Nix flakes:
 
