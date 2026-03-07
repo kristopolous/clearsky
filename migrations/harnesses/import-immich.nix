@@ -1,34 +1,27 @@
-{ pkgs }:
+{ pkgs, run-container }:
 
 pkgs.writeShellScriptBin "import-immich" ''
   set -e
 
   INPUT=""
   HOST="http://localhost:2283"
+  PORT="2283"
   KEY="dummy"
+  DATA_DIR="$HOME/.clearsky/immich"
 
   while [ $# -gt 0 ]; do
     case "$1" in
-      --input)
-        INPUT="$2"
-        shift 2
-        ;;
-      --host)
-        HOST="$2"
-        shift 2
-        ;;
-      --key)
-        KEY="$2"
-        shift 2
-        ;;
-      *)
-        shift
-        ;;
+      --input) INPUT="$2"; shift 2 ;;
+      --host) HOST="$2"; shift 2 ;;
+      --port) PORT="$2"; shift 2 ;;
+      --key) KEY="$2"; shift 2 ;;
+      --data-dir) DATA_DIR="$2"; shift 2 ;;
+      *) shift ;;
     esac
   done
 
   if [ -z "$INPUT" ]; then
-    echo "Usage: import-immich --input DIR [--host URL] [--key KEY]"
+    echo "Usage: import-immich --input DIR [--host URL] [--port PORT] [--key KEY]"
     exit 1
   fi
 
@@ -37,10 +30,12 @@ pkgs.writeShellScriptBin "import-immich" ''
     echo "Immich is not running at $HOST"
     echo "Starting Immich..."
 
-    # Start Immich container
-    podman run -d --name immich -p 2283:2283 \
-      -v "$HOME/.clearsky/immich:/mnt/data" \
-      ghcr.io/immich-app/immich-server:latest
+    # Start Immich container using run-container harness
+    ${run-container}/bin/run-container \
+      --name immich \
+      --image ghcr.io/immich-app/immich-server:latest \
+      --port "$PORT" \
+      --volume "$DATA_DIR:/mnt/data"
 
     # Wait for Immich to start
     for i in {1..30}; do

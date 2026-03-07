@@ -8,7 +8,6 @@ pkgs.stdenv.mkDerivation {
     pkgs.curl
     pkgs.unzip
     pkgs.immich-go
-    pkgs.podman
     pkgs.jq
   ];
 
@@ -60,24 +59,7 @@ pkgs.stdenv.mkDerivation {
       fi
     fi
 
-    # Step 3: Start Immich
-    echo "Starting Immich..."
-    if ! podman ps | grep -q immich; then
-      podman run -d --name immich -p 2283:2283 \
-        -v "$HOME/.clearsky/immich:/mnt/data" \
-        ghcr.io/immich-app/immich-server:latest
-    fi
-
-    # Wait for Immich to start
-    for i in {1..30}; do
-      if curl -s "http://localhost:2283/api/health" > /dev/null; then
-        echo "Immich started successfully"
-        break
-      fi
-      sleep 1
-    done
-
-    # Step 4: Import photos
+    # Step 3: Import photos (this will start Immich if needed)
     echo "Importing photos to Immich..."
     ${import-immich}/bin/import-immich \
       --input "$EXTRACT_DIR" \

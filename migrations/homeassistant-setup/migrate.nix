@@ -6,7 +6,6 @@ pkgs.stdenv.mkDerivation {
 
   buildInputs = [
     pkgs.curl
-    pkgs.podman
   ];
 
   installPhase = ''

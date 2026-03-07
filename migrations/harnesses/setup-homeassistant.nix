@@ -1,24 +1,18 @@
-{ pkgs }:
+{ pkgs, run-container }:
 
 pkgs.writeShellScriptBin "setup-homeassistant" ''
   set -e
 
   HOST="http://localhost:8123"
+  PORT="8123"
   DATA_DIR="$HOME/.clearsky/homeassistant"
 
   while [ $# -gt 0 ]; do
     case "$1" in
-      --host)
-        HOST="$2"
-        shift 2
-        ;;
-      --data-dir)
-        DATA_DIR="$2"
-        shift 2
-        ;;
-      *)
-        shift
-        ;;
+      --host) HOST="$2"; shift 2 ;;
+      --port) PORT="$2"; shift 2 ;;
+      --data-dir) DATA_DIR="$2"; shift 2 ;;
+      *) shift ;;
     esac
   done
 
@@ -33,15 +27,12 @@ pkgs.writeShellScriptBin "setup-homeassistant" ''
     exit 0
   fi
 
-  # Start Home Assistant container
-  echo "Starting Home Assistant container..."
-  podman run -d --name clearsky-homeassistant \
-    --privileged \
-    -p 8123:8123 \
-    -v "$DATA_DIR:/config:rw" \
-    -v /run/dbus:/run/dbus:ro \
-    --cgroupns=host \
-    ghcr.io/home-assistant/home-assistant:stable
+  # Start Home Assistant container using run-container harness
+  ${run-container}/bin/run-container \
+    --name homeassistant \
+    --image ghcr.io/home-assistant/home-assistant:stable \
+    --port "$PORT" \
+    --volume "$DATA_DIR:/config:rw"
 
   # Wait for Home Assistant to start (it takes longer)
   echo "Waiting for Home Assistant to start (this may take a few minutes)..."
