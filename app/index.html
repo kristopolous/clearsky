@@ -1074,11 +1074,22 @@
 
     // Download button handler - start migration with API key
     async function startMigrationWithApiKey() {
+      const uploadApiKey = document.getElementById('upload-api-key-input').value.trim();
+      if (!uploadApiKey) {
+        alert('Please paste your API key first');
+        document.getElementById('upload-api-key-input').focus();
+        return;
+      }
+      if (!uploadApiKey.startsWith('AIzaSy')) {
+        alert('API key should start with "AIzaSy". Please check your key.');
+        return;
+      }
+      showStep('progress');
       updateProgress(0, 'Starting automatic download from Google Photos API...');
 
       try {
         const result = await ipcRenderer.invoke('run-migration', selectedMigration, {
-          apiKey: apiKey
+          apiKey: uploadApiKey
         });
 
         if (result.success) {
@@ -1087,10 +1098,20 @@
             showStep('preview');
           }, 1500);
         } else {
-          updateProgress(0, `Error: ${result.error}`);
+          // Check if error is about Nix requirement
+          if (result.error && result.error.includes('requires Nix')) {
+            updateProgress(0, `⚠️ ${result.error}`);
+          } else {
+            updateProgress(0, `Error: ${result.error}`);
+          }
         }
       } catch (error) {
-        updateProgress(0, `Error: ${error.message}`);
+        // Check if error is about Nix requirement
+        if (error.message && error.message.includes('requires Nix')) {
+          updateProgress(0, `⚠️ ${error.message}`);
+        } else {
+          updateProgress(0, `Error: ${error.message}`);
+        }
       }
     }
 

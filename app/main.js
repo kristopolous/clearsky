@@ -150,22 +150,32 @@ async function runMigration(migrationName, options = {}) {
       // Get migration path
       const projectRoot = path.join(__dirname, '..');
       const migrationPath = path.join(projectRoot, 'migrations', migrationName);
-      
+
       // Set up environment variables for the migration
       const env = { ...process.env };
-      
+
       // Pass API key for Google Photos migration
       if (options.apiKey) {
         env.GOOGLE_PHOTOS_API_KEY = options.apiKey;
       }
-      
+
       // Pass ZIP file path if provided
       if (options.files && options.files.length > 0) {
         env.GOOGLE_PHOTOS_ZIP = options.files[0];
       }
 
-      // Try to build and run migration from Nix
-      exec(`nix build ${migrationPath}#default -o /tmp/clearsky-migration 2>/dev/null`, (error) => {
+      // Source Nix environment and build/run migration
+      // This ensures nix command is available in the subprocess
+      const nixCommand = `
+        if [ -f ~/.nix-profile/etc/profile.d/nix-daemon.sh ]; then
+          . ~/.nix-profile/etc/profile.d/nix-daemon.sh
+        elif [ -f /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]; then
+          . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+        fi
+        nix build ${migrationPath}#default -o /tmp/clearsky-migration 2>&1
+      `.replace(/\n\s*/g, ' ').trim();
+
+      exec(nixCommand, { env }, (error, stdout, stderr) => {
         if (error) {
           // Fallback: check if migration script exists locally
           const scriptPath = path.join(migrationPath, 'bin', 'migrate');
@@ -177,7 +187,7 @@ async function runMigration(migrationName, options = {}) {
               }
               resolve(stdout.trim());
             });
-            
+
             // Stream output to renderer
             child.stdout.on('data', (data) => {
               console.log(data.toString());
@@ -186,7 +196,19 @@ async function runMigration(migrationName, options = {}) {
               console.error(data.toString());
             });
           } else {
-            reject(new Error(`Migration ${migrationName} not found`));
+            // No Nix and no local script - provide helpful error
+            if (migrationName === 'google-photos-to-immich' && options.apiKey) {
+              // For Google Photos with API key, explain that Nix is needed for API download
+              reject(new Error(
+                'API-based download requires Nix to build the migration script.\n\n' +
+                'Options:\n' +
+                '1. Install Nix: https://install.nixos.org\n' +
+                '2. Or use Google Takeout: Export from takeout.google.com and upload the ZIP file'
+              ));
+            } else {
+              const nixError = stdout || stderr || error.message;
+              reject(new Error(`Nix build failed: ${nixError}\n\nMake sure Nix is installed and in your PATH.`));
+            }
           }
           return;
         }
@@ -199,7 +221,7 @@ async function runMigration(migrationName, options = {}) {
           }
           resolve(stdout.trim());
         });
-        
+
         // Stream output to renderer
         child.stdout.on('data', (data) => {
           console.log(data.toString());
