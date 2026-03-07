@@ -3,7 +3,7 @@
 <br/>
 </p>
 
-# Tossing those clouds away
+# Toss the clouds away
 
 **Clearsky** is a desktop application that makes self-hosting accessible to **everyone**—not just system administrators and power users. It guides non-technical users through migrating their data from cloud services (Google Photos, Google Drive, iCloud) to self-hosted, privacy-focused alternatives.
 
