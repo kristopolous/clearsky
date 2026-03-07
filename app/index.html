@@ -661,6 +661,7 @@
 
   <script>
     const { ipcRenderer } = require('electron');
+    const shell = require('electron').shell;
     const path = require('path');
     const fs = require('fs');
 
@@ -1289,6 +1290,14 @@
 
     // Initialize migration selector
     loadMigrations();
+
+    // Open all external links in system browser (not Electron)
+    document.addEventListener('click', (e) => {
+      if (e.target.tagName === 'A' && e.target.href.startsWith('http')) {
+        e.preventDefault();
+        shell.openExternal(e.target.href);
+      }
+    });
 
     // Tray context menu
     ipcRenderer.on('podman-missing', (event, message) => {
