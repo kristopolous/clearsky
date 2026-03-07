@@ -861,21 +861,36 @@
 
     function updateGuide() {
       const guideContainer = document.getElementById('service-specific-guide');
+      const apiKeySetup = document.getElementById('api-key-setup');
+      const manualExportGuide = document.getElementById('manual-export-guide');
+      const googleDocsGuide = document.getElementById('google-docs-guide');
+      
+      // Hide all specialized guides when using checkboxes
+      apiKeySetup.style.display = 'none';
+      manualExportGuide.style.display = 'none';
+      googleDocsGuide.style.display = 'none';
       
       if (servicesSelected.includes('google-photos')) {
         // Show API setup for Google Photos
         guideContainer.innerHTML = `
-          <div class="info-box" style="border-left-color: #4CAF50; background: #e8f5e9;">
-            <p><strong>💡 Recommended:</strong> Use the migration dropdown above for automatic download via Google Photos API.</p>
-            <p style="margin-top: 10px; font-size: 0.9rem;">Or continue with manual export from Google Takeout below.</p>
+          <div class="info-box" style="border-left-color: #4CAF50; background: #e8f5e9; margin-top: 20px;">
+            <p><strong>💡 Tip:</strong> For automatic download, use the <strong>migration dropdown</strong> at the top of this page and select "Google Photos to Immich".</p>
+            <p style="margin-top: 10px; font-size: 0.9rem;">Or continue below to manually export from Google Takeout.</p>
           </div>
         `;
+        // Show Continue button
+        document.getElementById('btn-continue-guide').style.display = 'inline-block';
       } else if (servicesSelected.includes('google-drive')) {
         guideContainer.innerHTML = '<p><strong>Google Drive selected</strong> - Export from takeout.google.com</p>';
+        document.getElementById('btn-continue-guide').style.display = 'inline-block';
       } else if (servicesSelected.includes('icloud')) {
         guideContainer.innerHTML = '<p><strong>iCloud selected</strong> - Export from iCloud.com</p>';
+        document.getElementById('btn-continue-guide').style.display = 'inline-block';
+      } else {
+        guideContainer.innerHTML = '';
+        document.getElementById('btn-continue-guide').style.display = 'none';
       }
-      
+
       if (servicesSelected.length > 0) {
         document.getElementById('btn-continue-guide').disabled = false;
       } else {
