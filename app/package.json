@@ -5,7 +5,12 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder --linux appimage"
+    "build": "electron-builder --linux appimage",
+    "build:linux": "electron-builder --linux appimage",
+    "build:mac": "electron-builder --mac --universal",
+    "build:mac:intel": "electron-builder --mac --x64",
+    "build:mac:arm": "electron-builder --mac --arm64",
+    "build:all": "electron-builder --mac --linux"
   },
   "keywords": [
     "cloud",
@@ -28,6 +33,43 @@
     "productName": "Clearsky",
     "directories": {
       "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!dist/**",
+      "!node_modules/.cache/**"
+    ],
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["universal"]
+        },
+        "zip"
+      ],
+      "icon": "assets/icon.icns",
+      "category": "public.app-category.utilities",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "assets/entitlements.mac.plist",
+      "entitlementsInherit": "assets/entitlements.mac.plist",
+      "notarize": false,
+      "minimumSystemVersion": "10.13"
+    },
+    "dmg": {
+      "title": "Clearsky",
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
     },
     "linux": {
       "target": "AppImage",

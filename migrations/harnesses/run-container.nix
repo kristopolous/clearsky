@@ -49,7 +49,13 @@ pkgs.writeShellScriptBin "run-container" ''
 
   # Detect container runtime
   RUNTIME=""
-  
+  IS_MACOS=false
+
+  # Detect macOS
+  if command -v uname &> /dev/null && [ "$(uname -s)" = "Darwin" ]; then
+    IS_MACOS=true
+  fi
+
   # Try nix-containers first (preferred on NixOS/Nix-based systems)
   if command -v nix-container-run &> /dev/null; then
     RUNTIME="nix-containers"
@@ -60,12 +66,24 @@ pkgs.writeShellScriptBin "run-container" ''
   elif command -v docker &> /dev/null; then
     RUNTIME="docker"
     echo "Using Docker runtime..."
+  elif command -v orbstack &> /dev/null; then
+    # OrbStack on macOS
+    RUNTIME="docker"
+    echo "Using OrbStack (Docker-compatible) runtime..."
   else
-    echo "Error: No container runtime found (nix-containers, podman, or docker)"
-    echo "Please install one of:"
-    echo "  - nix-containers: nix profile install nixpkgs#nix-containers"
-    echo "  - podman: nix profile install nixpkgs#podman"
-    echo "  - docker: nix profile install nixpkgs#docker"
+    echo "Error: No container runtime found (nix-containers, podman, docker, or orbstack)"
+    echo ""
+    if [ "$IS_MACOS" = "true" ]; then
+      echo "On macOS, please install one of:"
+      echo "  - OrbStack (recommended): https://orbstack.dev"
+      echo "  - Docker Desktop: https://docker.com"
+      echo "  - Podman: brew install podman"
+    else
+      echo "Please install one of:"
+      echo "  - nix-containers: nix profile install nixpkgs#nix-containers"
+      echo "  - podman: nix profile install nixpkgs#podman"
+      echo "  - docker: nix profile install nixpkgs#docker"
+    fi
     exit 1
   fi
 
@@ -73,6 +91,14 @@ pkgs.writeShellScriptBin "run-container" ''
   if $RUNTIME ps --format '{{.Names}}' 2>/dev/null | grep -q "^clearsky-$NAME$"; then
     echo "Container 'clearsky-$NAME' is already running"
     exit 0
+  fi
+
+  # Handle macOS volume paths
+  if [ "$IS_MACOS" = "true" ] && [ -n "$VOLUME" ]; then
+    # On macOS with Docker Desktop/OrbStack, volumes need special handling
+    # Convert ~/ to /Users/username/
+    VOLUME=$(echo "$VOLUME" | sed "s|^$HOME/|/Users/$USER/|g")
+    echo "Note: Adjusted volume path for macOS: $VOLUME"
   fi
 
   # Build run command based on runtime
@@ -112,4 +138,12 @@ pkgs.writeShellScriptBin "run-container" ''
   eval $CMD
 
   echo "Container 'clearsky-$NAME' started successfully"
+  
+  # macOS-specific post-start message
+  if [ "$IS_MACOS" = "true" ]; then
+    echo ""
+    echo "Note: On macOS, containers run in a lightweight VM."
+    echo "First start may take a minute while the VM initializes."
+    echo ""
+  fi
 ''

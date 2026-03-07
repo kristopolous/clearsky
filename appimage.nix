@@ -41,7 +41,7 @@ appimageTools.wrapAppImage {
     '';
     homepage = "https://github.com/clearsky/clearsky";
     license = lib.licenses.mit;
-    platforms = [ "x86_64-linux" "aarch64-linux" ];
+    platforms = lib.optionals stdenv.isLinux [ "x86_64-linux" "aarch64-linux" ];
     mainProgram = "clearsky";
   };
 }

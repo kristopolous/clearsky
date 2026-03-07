@@ -1,18 +1,31 @@
-const { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage } = require('electron');
+const { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, shell } = require('electron');
 const path = require('path');
 const { exec, execSync } = require('child_process');
 const fs = require('fs');
+const os = require('os');
 
 let mainWindow = null;
 let tray = null;
 const isDev = process.env.NODE_ENV === 'development';
+
+// Platform detection
+const isMacOS = process.platform === 'darwin';
+const isLinux = process.platform === 'linux';
+
+// Get home directory (handles macOS/Linux differences)
+const homeDir = os.homedir();
+const clearskyDataDir = path.join(homeDir, '.clearsky');
 
 // Load migrations from Nix registry
 function loadMigrations() {
   try {
     // Try to load from Nix flake
     const projectRoot = path.join(__dirname, '..');
-    const output = execSync(`cd ${projectRoot} && nix eval --json .#packages.x86_64-linux.default 2>/dev/null`, { encoding: 'utf-8' });
+    
+    // Determine system for Nix eval
+    const system = isMacOS ? 'aarch64-darwin' : 'x86_64-linux';
+    
+    const output = execSync(`cd ${projectRoot} && nix eval --json .#packages.${system}.default 2>/dev/null`, { encoding: 'utf-8' });
     return JSON.parse(output);
   } catch (error) {
     console.log('Warning: Could not load migrations from Nix, using fallback', error.message);
@@ -23,6 +36,20 @@ function loadMigrations() {
         source: 'google-photos',
         target: 'immich',
         description: 'Migrate Google Photos exports to Immich',
+        version: '1.0.0'
+      },
+      'google-docs-to-etherpad': {
+        name: 'Google Docs to Etherpad',
+        source: 'google-docs',
+        target: 'etherpad',
+        description: 'Migrate Google Docs exports to Etherpad',
+        version: '1.0.0'
+      },
+      'ghost-setup': {
+        name: 'Ghost Setup',
+        source: 'new',
+        target: 'ghost',
+        description: 'Set up Ghost for self-hosted blogging',
         version: '1.0.0'
       }
     };
@@ -98,7 +125,7 @@ function checkPodmanInstalled() {
 async function startService(serviceName, port, image, env = {}) {
   return new Promise((resolve, reject) => {
     const containerName = `clearsky-${serviceName}`;
-    const dataDir = path.join(process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE, '.clearsky', serviceName);
+    const dataDir = path.join(clearskyDataDir, serviceName);
 
     fs.mkdirSync(dataDir, { recursive: true });
 
@@ -106,7 +133,29 @@ async function startService(serviceName, port, image, env = {}) {
       .map(([key, value]) => `-e ${key}="${value}"`)
       .join(' ');
 
-    const command = `podman run -d --rm --name ${containerName} -p ${port}:2283 ${envArgs} -v ${dataDir}:/mnt/data ${image}`;
+    // Detect container runtime (macOS supports Docker/OrbStack, Linux supports Podman)
+    let runtime = 'podman';
+    let volumeFlag = '-v';
+    
+    if (isMacOS) {
+      // On macOS, prefer Docker/OrbStack
+      if (process.env.ORBSTACK) {
+        runtime = 'docker';
+      } else {
+        // Check if Docker is available
+        try {
+          execSync('docker --version 2>/dev/null');
+          runtime = 'docker';
+        } catch (e) {
+          runtime = 'podman';
+        }
+      }
+      
+      // macOS volume paths need /Users/ instead of /home/
+      // Docker Desktop on macOS handles this automatically
+    }
+
+    const command = `${runtime} run -d --rm --name ${containerName} -p ${port}:${port} ${envArgs} ${volumeFlag} ${dataDir}:/mnt/data ${image}`;
 
     exec(command, (error, stdout, stderr) => {
       if (error) {
