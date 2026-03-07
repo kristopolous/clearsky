@@ -606,6 +606,28 @@
 
     <div class="footer">
       <p>Clearsky v1.0.0 | Privacy-focused data migration</p>
+      <button id="btn-diagnostics" class="btn btn-secondary" style="margin-top: 10px; font-size: 0.8rem; padding: 8px 16px;">
+        🔍 System Diagnostics
+      </button>
+    </div>
+
+    <!-- Diagnostics Modal -->
+    <div id="diagnostics-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; overflow-y: auto;">
+      <div style="background: white; margin: 50px auto; padding: 30px; border-radius: 12px; max-width: 800px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h2 style="margin: 0; color: #1a5f7a;">🔍 System Diagnostics</h2>
+          <button id="btn-close-diagnostics" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #666;">&times;</button>
+        </div>
+        
+        <div id="diagnostics-content">
+          <p>Loading system information...</p>
+        </div>
+        
+        <div style="margin-top: 20px; text-align: center;">
+          <button id="btn-refresh-diagnostics" class="btn btn-primary">🔄 Refresh</button>
+          <button id="btn-export-diagnostics" class="btn btn-secondary">📋 Export to Clipboard</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -839,9 +861,21 @@
 
     function updateGuide() {
       const guideContainer = document.getElementById('service-specific-guide');
+      
       if (servicesSelected.includes('google-photos')) {
-        guideContainer.innerHTML = '<p><strong>Google Photos selected</strong> - Export from takeout.google.com</p>';
+        // Show API setup for Google Photos
+        guideContainer.innerHTML = `
+          <div class="info-box" style="border-left-color: #4CAF50; background: #e8f5e9;">
+            <p><strong>💡 Recommended:</strong> Use the migration dropdown above for automatic download via Google Photos API.</p>
+            <p style="margin-top: 10px; font-size: 0.9rem;">Or continue with manual export from Google Takeout below.</p>
+          </div>
+        `;
+      } else if (servicesSelected.includes('google-drive')) {
+        guideContainer.innerHTML = '<p><strong>Google Drive selected</strong> - Export from takeout.google.com</p>';
+      } else if (servicesSelected.includes('icloud')) {
+        guideContainer.innerHTML = '<p><strong>iCloud selected</strong> - Export from iCloud.com</p>';
       }
+      
       if (servicesSelected.length > 0) {
         document.getElementById('btn-continue-guide').disabled = false;
       } else {
@@ -878,7 +912,11 @@
       const uploadTitle = document.getElementById('upload-title');
       const setupConfirmText = document.getElementById('setup-confirm-text');
 
-      if (!selectedMigration) {
+      // Check if Google Photos is selected (via checkbox or migration)
+      const isGooglePhotos = selectedMigration === 'google-photos-to-immich' || 
+                             servicesSelected.includes('google-photos');
+
+      if (!selectedMigration && servicesSelected.length === 0) {
         // Manual service selection - show file upload
         fileUploadSection.style.display = 'block';
         setupConfirmSection.style.display = 'none';
@@ -898,29 +936,38 @@
       };
 
       const config = migration[selectedMigration];
-      if (!config) return;
+      
+      if (config) {
+        uploadTitle.textContent = config.title;
 
-      uploadTitle.textContent = config.title;
-
-      if (config.type === 'setup') {
-        fileUploadSection.style.display = 'none';
-        setupConfirmSection.style.display = 'block';
-        uploadApiSection.style.display = 'none';
-        btnImport.style.display = 'none';
-        btnStartSetup.style.display = 'inline-block';
-        setupConfirmText.textContent = config.text;
-      } else if (config.showApi) {
-        // Google Photos - show both API and file upload
+        if (config.type === 'setup') {
+          fileUploadSection.style.display = 'none';
+          setupConfirmSection.style.display = 'block';
+          uploadApiSection.style.display = 'none';
+          btnImport.style.display = 'none';
+          btnStartSetup.style.display = 'inline-block';
+          setupConfirmText.textContent = config.text;
+        } else if (config.showApi) {
+          // Google Photos - show both API and file upload
+          fileUploadSection.style.display = 'block';
+          setupConfirmSection.style.display = 'none';
+          uploadApiSection.style.display = 'block';
+          btnImport.style.display = 'inline-block';
+          btnStartSetup.style.display = 'none';
+        } else {
+          // Other upload migrations - just file upload
+          fileUploadSection.style.display = 'block';
+          setupConfirmSection.style.display = 'none';
+          uploadApiSection.style.display = 'none';
+          btnImport.style.display = 'inline-block';
+          btnStartSetup.style.display = 'none';
+        }
+      } else if (isGooglePhotos) {
+        // Google Photos selected via checkbox - show API option
+        uploadTitle.textContent = 'Upload Google Photos Export';
         fileUploadSection.style.display = 'block';
         setupConfirmSection.style.display = 'none';
         uploadApiSection.style.display = 'block';
-        btnImport.style.display = 'inline-block';
-        btnStartSetup.style.display = 'none';
-      } else {
-        // Other upload migrations - just file upload
-        fileUploadSection.style.display = 'block';
-        setupConfirmSection.style.display = 'none';
-        uploadApiSection.style.display = 'none';
         btnImport.style.display = 'inline-block';
         btnStartSetup.style.display = 'none';
       }
@@ -1126,13 +1173,48 @@
     // Tailscale setup
     document.getElementById('btn-setup-tailscale').addEventListener('click', async () => {
       const statusDiv = document.getElementById('tailscale-status');
-      statusDiv.innerHTML = '<p>Starting Tailscale...</p>';
-      
+      statusDiv.innerHTML = '<p>Starting Tailscale and opening authentication...</p>';
+
       try {
-        await ipcRenderer.invoke('start-tailscale', null);
-        statusDiv.innerHTML = '<p style="color: #4CAF50;"><strong>Tailscale is running!</strong> You can now access your services remotely.</p>';
+        const result = await ipcRenderer.invoke('start-tailscale', null);
+        
+        // Get Tailscale IP address
+        const tailscaleIp = result.ip || '100.x.x.x';
+        
+        statusDiv.innerHTML = `
+          <div style="background: #e8f5e9; border: 1px solid #4CAF50; border-radius: 8px; padding: 15px;">
+            <p style="color: #4CAF50; font-weight: 600; margin-bottom: 10px;">
+              ✅ Tailscale is running!
+            </p>
+            <p style="margin-bottom: 10px;">
+              <strong>Your Tailscale IP:</strong> <code style="background: white; padding: 3px 8px; border-radius: 4px;">${tailscaleIp}</code>
+            </p>
+            <p style="font-size: 0.9rem; color: #666;">
+              Use this IP address to access your services from your phone:
+              <br>
+              <code style="background: white; padding: 3px 8px; border-radius: 4px;">http://${tailscaleIp}:2283</code> (Immich)
+            </p>
+          </div>
+        `;
+        
+        // Enable skip button with updated text
+        const skipButton = document.getElementById('btn-skip-tailscale');
+        skipButton.textContent = 'Continue →';
+        skipButton.classList.remove('btn-secondary');
+        skipButton.classList.add('btn-primary');
       } catch (error) {
-        statusDiv.innerHTML = `<p style="color: #f44336;">Error: ${error.message}</p>`;
+        statusDiv.innerHTML = `
+          <div style="background: #ffebee; border: 1px solid #f44336; border-radius: 8px; padding: 15px;">
+            <p style="color: #f44336; font-weight: 600;">
+              ❌ Error: ${error.message}
+            </p>
+            <p style="font-size: 0.9rem; margin-top: 10px;">
+              Make sure Tailscale is installed. You can install it from:
+              <br>
+              <a href="https://tailscale.com/download" target="_blank" style="color: #1a5f7a;">tailscale.com/download</a>
+            </p>
+          </div>
+        `;
       }
     });
 

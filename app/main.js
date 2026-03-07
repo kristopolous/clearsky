@@ -273,19 +273,27 @@ ipcMain.on('import-photos', async (event, zipPath) => {
   }
 });
 
-ipcMain.on('start-tailscale', async (event, authKey) => {
+ipcMain.handle('start-tailscale', async (event, authKey) => {
   return new Promise((resolve, reject) => {
     const containerName = 'clearsky-tailscale';
     const command = authKey
-      ? `podman run -d --rm --name ${containerName} --cap-add=NET_ADMIN --cap-add=SYS_MODULE -v /dev/net/tun:/dev/net/tun -v /run:/run ${authKey ? `-e TS_AUTHKEY="${authKey}"` : ''} tailscale/tailscale:latest tailnet --state-dir=/run/tailscale`
-      : `podman run -d --rm --name ${containerName} --cap-add=NET_ADMIN --cap-add=SYS_MODULE -v /dev/net/tun:/dev/net/tun -v /run:/run tailscale/tailscale:latest tailnet --state-dir=/run/tailscale --no-verbose`;
+      ? `podman run -d --rm --name ${containerName} --cap-add=NET_ADMIN --cap-add=SYS_MODULE -v /dev/net/tun:/dev/net/tun -v /run:/run ${authKey ? `-e TS_AUTHKEY="${authKey}"` : ''} tailscale/tailscale:latest --state-dir=/run/tailscale`
+      : `podman run -d --rm --name ${containerName} --cap-add=NET_ADMIN --cap-add=SYS_MODULE -v /dev/net/tun:/dev/net/tun -v /run:/run tailscale/tailscale:latest --state-dir=/run/tailscale`;
 
     exec(command, (error, stdout, stderr) => {
       if (error) {
         reject(error);
         return;
       }
-      resolve(stdout.trim());
+      
+      // Wait a moment for Tailscale to authenticate and get IP
+      setTimeout(() => {
+        // Get Tailscale IP address
+        exec('podman exec clearsky-tailscale tailscale ip -4 2>/dev/null', (ipError, ipStdout) => {
+          const ip = ipError ? null : ipStdout.trim();
+          resolve({ success: true, containerId: stdout.trim(), ip: ip });
+        });
+      }, 3000);
     });
   });
 });

@@ -160,16 +160,65 @@ npm run build
    - Upload ZIP file
 5. **Watch progress** - Photos download/import automatically
 6. **Preview** - Open Immich to verify
-7. **Done** - Your photos are now local!
+7. **Set up remote access** (recommended):
+   - Click "Set Up Tailscale"
+   - Sign in with Google/Microsoft/GitHub
+   - Install Tailscale on your phone
+   - Get your Tailscale IP address
+8. **Done** - Access Immich from your phone at `http://[TAILSCALE_IP]:2283`
 
-### Setting Up Nextcloud
+### Setting Up Remote Access (Tailscale)
 
-1. **Select migration** - Choose "Nextcloud Setup"
-2. **Read description** - See what Nextcloud provides
-3. **Click Continue** → "🚀 Start Setup"
-4. **Wait** - Container starts automatically
-5. **Open Dashboard** - Access at http://localhost:8080
-6. **Login** - admin / admin123 (change this!)
+**Why you need this:** Your self-hosted services run on your home computer. To access them from your phone when you're away, you need a secure connection through your home's firewall/NAT.
+
+**Tailscale** creates a private, encrypted network between your devices—no port forwarding required.
+
+#### On Your Computer (running Clearsky)
+
+1. In Clearsky, click "Set Up Tailscale"
+2. A browser window opens—sign in with any account
+3. Authorize the device
+4. Note your Tailscale IP address (starts with `100.`)
+
+#### On Your Phone
+
+1. **Download Tailscale:**
+   - **iOS:** [App Store](https://apps.apple.com/app/tailscale/id1475387142)
+   - **Android:** [Google Play](https://play.google.com/store/apps/details?id=com.tailscale.ipn) | [F-Droid](https://f-droid.org/packages/com.tailscale.ipn/)
+
+2. **Sign in** with the same account as on your computer
+
+3. **Enable Tailscale** on your phone
+
+4. **Access your services:**
+   - Open your phone's browser
+   - Go to `http://[YOUR_TAILSCALE_IP]:2283` for Immich
+   - Or `http://[YOUR_TAILSCALE_IP]:8080` for Nextcloud, etc.
+
+#### Optional: Native Mobile Apps
+
+For the best experience, consider installing native apps for your self-hosted services:
+
+**Immich (Photos):**
+- **iOS:** [App Store](https://apps.apple.com/app/immich/id1613945252) | [Setup Guide](https://immich.app/docs/features/mobile-app)
+- **Android:** [Google Play](https://play.google.com/store/apps/details?id=app.alextran.immich) | [F-Droid](https://f-droid.org/packages/app.alextran.immich/) | [Direct APK](https://github.com/immich-app/immich/releases)
+
+**Nextcloud (Files):**
+- **iOS:** [App Store](https://apps.apple.com/app/nextcloud/id1125420102)
+- **Android:** [Google Play](https://play.google.com/store/apps/details?id=com.nextcloud.client) | [F-Droid](https://f-droid.org/packages/com.nextcloud.client/)
+
+**Home Assistant:**
+- **iOS:** [App Store](https://apps.apple.com/app/home-assistant/id1099568401)
+- **Android:** [Google Play](https://play.google.com/store/apps/details?id=io.homeassistant.companion.android) | [F-Droid](https://f-droid.org/packages/io.homeassistant.companion.android.minimal/)
+
+#### Example
+
+If your Tailscale IP is `100.87.42.15`:
+- Immich: `http://100.87.42.15:2283`
+- Nextcloud: `http://100.87.42.15:8080`
+- Home Assistant: `http://100.87.42.15:8123`
+
+**Tip:** Add these URLs to your phone's home screen for app-like access!
 
 ### Available Migrations
 
