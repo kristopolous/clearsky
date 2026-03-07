@@ -355,24 +355,52 @@
             <h3>✅ Recommended: Automatic Download via API</h3>
             <p>Get an API key from Google and Clearsky will automatically download all your photos. No manual export needed!</p>
           </div>
-          
+
           <div style="margin: 20px 0;">
-            <h4 style="margin-bottom: 10px;">Get Your API Key:</h4>
+            <h4 style="margin-bottom: 10px;">Get Your API Key (3 minutes):</h4>
             <div class="info-box">
               <ol style="line-height: 2;">
-                <li>Go to <a href="https://console.cloud.google.com/" target="_blank" style="color: #1a5f7a; font-weight: 600;">Google Cloud Console</a></li>
-                <li>Create a new project (or select existing)</li>
-                <li>Enable <strong>Google Photos Library API</strong></li>
-                <li>Go to <strong>APIs & Services</strong> → <strong>Credentials</strong></li>
-                <li>Click <strong>+ CREATE CREDENTIALS</strong> → <strong>API Key</strong></li>
-                <li>Copy the key (starts with <code>AIzaSy</code>) and paste below</li>
+                <li>
+                  <strong>Go to Google Cloud Console:</strong>
+                  <br>
+                  <a href="https://console.cloud.google.com/projectcreate" target="_blank" style="color: #1a5f7a; font-weight: 600;">
+                    🔗 console.cloud.google.com/projectcreate
+                  </a>
+                </li>
+                <li>
+                  <strong>Create a new project:</strong>
+                  <br>
+                  Enter "Clearsky Photos" (or any name) → Click "Create"
+                </li>
+                <li>
+                  <strong>Enable the API:</strong>
+                  <br>
+                  <a href="https://console.cloud.google.com/apis/library/photoslibrary.googleapis.com" target="_blank" style="color: #1a5f7a;">
+                    🔗 Click here to enable Google Photos Library API
+                  </a>
+                  <br>
+                  (Or search for "Photos Library API" in the API Library)
+                </li>
+                <li>
+                  <strong>Create API Key:</strong>
+                  <br>
+                  <a href="https://console.cloud.google.com/apis/credentials" target="_blank" style="color: #1a5f7a;">
+                    🔗 Go to Credentials → Click "+ CREATE CREDENTIALS" → Select "API Key"
+                  </a>
+                </li>
+                <li>
+                  <strong>Copy the key:</strong>
+                  <br>
+                  A popup will show your key (starts with <code>AIzaSy</code>) → Click the copy icon 📋
+                </li>
               </ol>
-              <p style="margin-top: 15px; font-size: 0.9rem;">
+              <p style="margin-top: 15px; font-size: 0.9rem; background: #fff3e0; padding: 10px; border-radius: 8px; border-left: 3px solid #ff9800;">
+                <strong>⏱️ Quick guide:</strong> The whole process takes about 3 minutes. 
                 <a href="https://developers.google.com/photos/library/guides/get-started" target="_blank" style="color: #1a5f7a;">📖 Full setup guide with screenshots</a>
               </p>
             </div>
           </div>
-          
+
           <div style="margin: 20px 0;">
             <label for="google-api-key" style="display: block; margin-bottom: 8px; font-weight: 600;">
               Paste your API key:
@@ -384,11 +412,11 @@
               🔒 Key is used locally only, never sent to Clearsky servers
             </p>
           </div>
-          
+
           <button id="btn-download-api" class="btn btn-primary" style="background: #4CAF50; width: 100%; padding: 15px;">
             🚀 Download My Photos Automatically
           </button>
-          
+
           <div style="margin-top: 30px; text-align: center;">
             <p style="color: #666; margin-bottom: 10px;">Having trouble with the API?</p>
             <button id="btn-show-manual" class="btn btn-secondary" style="font-size: 0.9rem;">
