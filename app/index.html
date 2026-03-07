@@ -437,6 +437,24 @@
       <div id="step-upload" class="step">
         <h2 id="upload-title">Upload Your Exported Files</h2>
         
+        <!-- API Download option for Google Photos -->
+        <div id="upload-api-section" style="display: none;">
+          <div class="info-box" style="border-left-color: #4CAF50; background: #e8f5e9; margin-bottom: 20px;">
+            <h3>🚀 Download from Google Photos API</h3>
+            <p>Enter your API key to automatically download your photos:</p>
+            <input type="password" id="upload-api-key-input" 
+              placeholder="AIzaSy..." 
+              style="width: 100%; padding: 12px; border: 2px solid #4CAF50; border-radius: 8px; font-size: 1rem; font-family: monospace; margin: 10px 0;">
+            <button id="btn-upload-download-api" class="btn btn-primary" style="background: #4CAF50; width: 100%; padding: 15px;">
+              🚀 Download My Photos Automatically
+            </button>
+            <p style="margin-top: 10px; font-size: 0.9rem; color: #666;">
+              🔒 Key is used locally only, never sent to Clearsky servers
+            </p>
+          </div>
+          <p style="text-align: center; color: #666;">— OR —</p>
+        </div>
+        
         <!-- File upload for migrations that need it -->
         <div id="file-upload-section">
           <p>Drag and drop your exported ZIP files here:</p>
@@ -487,29 +505,102 @@
 
       <div id="step-tailscale" class="step">
         <h2>Set Up Remote Access</h2>
+        
+        <div class="info-box" style="border-left-color: #2196F3; background: #e3f2fd; margin-bottom: 20px;">
+          <h3>📱 Why Set Up Remote Access?</h3>
+          <p style="line-height: 1.6;">
+            Your self-hosted services (Immich, Nextcloud, etc.) are running on your computer at home. 
+            To access them from your <strong>phone or tablet</strong> when you're away from home, you need a secure connection.
+          </p>
+          <p style="line-height: 1.6; margin-top: 10px;">
+            <strong>Tailscale</strong> creates a secure, private network between your devices—no port forwarding or technical setup required.
+          </p>
+        </div>
+
         <div class="info-box">
-          <h3>Tailscale Integration</h3>
-          <p>Enable secure remote access to your self-hosted services:</p>
-          <ol>
+          <h3>Step 1: Set Up Tailscale on This Computer</h3>
+          <ol style="line-height: 2;">
             <li>Click "Set Up Tailscale" below</li>
-            <li>Authenticate with your Tailscale account</li>
-            <li>Get a unique URL to access your services from anywhere</li>
+            <li>A browser window will open—sign in with Google, Microsoft, or GitHub</li>
+            <li>Authorize this device when prompted</li>
+            <li>Return here when complete</li>
+          </ol>
+          <button id="btn-setup-tailscale" class="btn btn-primary" style="margin-top: 15px; width: 100%;">
+            🔐 Set Up Tailscale on This Computer
+          </button>
+          <div id="tailscale-status" style="margin-top: 15px;"></div>
+        </div>
+
+        <div class="info-box" style="margin-top: 20px;">
+          <h3>Step 2: Install Tailscale on Your Phone</h3>
+          <ol style="line-height: 2;">
+            <li>Download Tailscale from your app store:
+              <ul style="margin-top: 5px;">
+                <li>iOS: <a href="https://apps.apple.com/app/tailscale/id1475387142" target="_blank">App Store</a></li>
+                <li>Android: <a href="https://play.google.com/store/apps/details?id=com.tailscale.ipn" target="_blank">Google Play</a></li>
+              </ul>
+            </li>
+            <li>Open Tailscale and sign in with the <strong>same account</strong></li>
+            <li>Enable Tailscale on your phone</li>
+            <li>Your computer will appear in the device list</li>
           </ol>
         </div>
-        <button id="btn-setup-tailscale" class="btn btn-primary">Set Up Tailscale</button>
-        <div id="tailscale-status" style="margin-top: 20px;"></div>
-        <button id="btn-skip-tailscale" class="btn btn-secondary" style="margin-top: 10px;">Skip for Now</button>
+
+        <div class="info-box" style="margin-top: 20px; border-left-color: #4CAF50; background: #e8f5e9;">
+          <h3>Step 3: Access Your Services from Your Phone</h3>
+          <p style="line-height: 1.6;">
+            Once Tailscale is running on both devices, use your computer's <strong>Tailscale IP address</strong> to access services:
+          </p>
+          <ul style="margin-top: 10px; line-height: 1.8;">
+            <li><strong>Immich:</strong> http://[TAILSCALE_IP]:2283</li>
+            <li><strong>Nextcloud:</strong> http://[TAILSCALE_IP]:8080</li>
+            <li><strong>ownCloud:</strong> http://[TAILSCALE_IP]:8081</li>
+            <li><strong>Home Assistant:</strong> http://[TAILSCALE_IP]:8123</li>
+          </ul>
+          <p style="margin-top: 10px; font-size: 0.9rem; color: #666;">
+            💡 Tip: In the Tailscale app on your phone, tap your computer to see its IP address.
+          </p>
+        </div>
+
+        <div style="margin-top: 20px; text-align: center;">
+          <button id="btn-skip-tailscale" class="btn btn-secondary">
+            Skip for Now (I'll set this up later)
+          </button>
+        </div>
       </div>
 
       <div id="step-complete" class="step success-message">
         <div class="success-icon">✅</div>
-        <h2>Migration Complete!</h2>
+        <h2>All Done!</h2>
         <p>Your data has been successfully migrated to self-hosted services.</p>
+        
+        <div class="info-box" style="text-align: left; margin: 20px 0; background: #f0f9ff; border-left-color: #1a5f7a;">
+          <h3>📱 Access from Your Phone</h3>
+          <p style="line-height: 1.6;">
+            To access your services from your phone or tablet:
+          </p>
+          <ol style="line-height: 2; margin-top: 10px;">
+            <li><strong>Install Tailscale</strong> on your phone (iOS/Android)</li>
+            <li>Sign in with the <strong>same account</strong> as on this computer</li>
+            <li>Enable Tailscale on your phone</li>
+            <li>Find your computer's <strong>Tailscale IP</strong> (100.x.x.x)</li>
+            <li>Use the URLs below in your phone's browser:</li>
+          </ol>
+          <div style="margin-top: 15px; padding: 10px; background: white; border-radius: 8px; font-family: monospace; font-size: 0.9rem;">
+            <div style="padding: 5px 0; border-bottom: 1px solid #eee;">Immich: http://[IP]:2283</div>
+            <div style="padding: 5px 0; border-bottom: 1px solid #eee;">Nextcloud: http://[IP]:8080</div>
+            <div style="padding: 5px 0; border-bottom: 1px solid #eee;">ownCloud: http://[IP]:8081</div>
+            <div style="padding: 5px 0;">Home Assistant: http://[IP]:8123</div>
+          </div>
+        </div>
+        
         <div style="margin: 20px 0;">
-          <button id="btn-open-dashboard" class="btn btn-primary">Open Dashboard</button>
+          <button id="btn-open-dashboard" class="btn btn-primary">Open Dashboard on This Computer</button>
           <button id="btn-undo" class="btn btn-secondary">Undo / Rollback</button>
         </div>
-        <p style="color: #666; font-size: 0.9rem;">Your photos are now stored locally. Access via the tray icon.</p>
+        <p style="color: #666; font-size: 0.9rem;">
+          Your data is now stored locally on your computer. Access it anytime via the tray icon or the URLs above.
+        </p>
       </div>
     </div>
 
@@ -601,11 +692,14 @@
         // Show API key setup as primary flow for Google Photos
         apiKeySetup.style.display = 'block';
         document.getElementById('btn-download-api').style.display = 'block';
+        document.getElementById('btn-continue-guide').style.display = 'inline-block';
+        document.getElementById('btn-continue-guide').textContent = 'Continue to Upload';
         serviceSpecificGuide.innerHTML = '<p><strong>Google Photos selected</strong> - Use API for automatic download (recommended) or Takeout as fallback</p>';
       } else if (migration.target === 'etherpad' && migration.source === 'google-docs') {
         // Google Docs requires Takeout
         googleDocsGuide.style.display = 'block';
         document.getElementById('btn-continue-guide').style.display = 'inline-block';
+        document.getElementById('btn-continue-guide').textContent = 'Continue';
         serviceSpecificGuide.innerHTML = '<p><strong>Google Docs selected</strong> - Export from takeout.google.com</p>';
       } else if (migration.target === 'nextcloud' && migration.source === 'new') {
         // Nextcloud setup - no export needed
@@ -778,6 +872,7 @@
     function configureUploadStep() {
       const fileUploadSection = document.getElementById('file-upload-section');
       const setupConfirmSection = document.getElementById('setup-confirm-section');
+      const uploadApiSection = document.getElementById('upload-api-section');
       const btnImport = document.getElementById('btn-import');
       const btnStartSetup = document.getElementById('btn-start-setup');
       const uploadTitle = document.getElementById('upload-title');
@@ -787,6 +882,7 @@
         // Manual service selection - show file upload
         fileUploadSection.style.display = 'block';
         setupConfirmSection.style.display = 'none';
+        uploadApiSection.style.display = 'none';
         btnImport.style.display = 'inline-block';
         btnStartSetup.style.display = 'none';
         uploadTitle.textContent = 'Upload Your Exported Files';
@@ -794,8 +890,8 @@
       }
 
       const migration = {
-        'google-photos-to-immich': { type: 'upload', title: 'Upload Google Photos Export' },
-        'google-docs-to-etherpad': { type: 'upload', title: 'Upload Google Docs Export' },
+        'google-photos-to-immich': { type: 'upload', title: 'Upload Google Photos Export', showApi: true },
+        'google-docs-to-etherpad': { type: 'upload', title: 'Upload Google Docs Export', showApi: false },
         'nextcloud-setup': { type: 'setup', title: 'Set Up Nextcloud', text: 'This will start Nextcloud on http://localhost:8080' },
         'owncloud-setup': { type: 'setup', title: 'Set Up ownCloud', text: 'This will start ownCloud on http://localhost:8081' },
         'homeassistant-setup': { type: 'setup', title: 'Set Up Home Assistant', text: 'This will start Home Assistant on http://localhost:8123 (may take a few minutes)' }
@@ -809,12 +905,22 @@
       if (config.type === 'setup') {
         fileUploadSection.style.display = 'none';
         setupConfirmSection.style.display = 'block';
+        uploadApiSection.style.display = 'none';
         btnImport.style.display = 'none';
         btnStartSetup.style.display = 'inline-block';
         setupConfirmText.textContent = config.text;
-      } else {
+      } else if (config.showApi) {
+        // Google Photos - show both API and file upload
         fileUploadSection.style.display = 'block';
         setupConfirmSection.style.display = 'none';
+        uploadApiSection.style.display = 'block';
+        btnImport.style.display = 'inline-block';
+        btnStartSetup.style.display = 'none';
+      } else {
+        // Other upload migrations - just file upload
+        fileUploadSection.style.display = 'block';
+        setupConfirmSection.style.display = 'none';
+        uploadApiSection.style.display = 'none';
         btnImport.style.display = 'inline-block';
         btnStartSetup.style.display = 'none';
       }
@@ -825,6 +931,22 @@
       if (!selectedMigration) return;
       showStep('progress');
       startSetupMigration();
+    });
+
+    // Upload step API download button handler
+    document.getElementById('btn-upload-download-api')?.addEventListener('click', () => {
+      apiKey = document.getElementById('upload-api-key-input').value.trim();
+      if (!apiKey) {
+        alert('Please paste your API key first');
+        document.getElementById('upload-api-key-input').focus();
+        return;
+      }
+      if (!apiKey.startsWith('AIzaSy')) {
+        alert('API key should start with "AIzaSy". Please check your key.');
+        return;
+      }
+      showStep('progress');
+      startMigrationWithApiKey();
     });
 
     // Drag and drop

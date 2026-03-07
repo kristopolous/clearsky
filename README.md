@@ -3,22 +3,30 @@
 <br/>
 </p>
 
-**Clearsky** is a user-friendly desktop application that guides non-technical users through migrating their data from cloud services to self-hosted, privacy-focused alternatives.
+# Clearsky: Nix for the Rest of Us
 
-**Built for the NixOS Hackathon** - showcasing Nix's power for reproducible, self-contained desktop applications and modular migration frameworks.
+**Clearsky** is a desktop application that makes self-hosting accessible to **everyone**—not just system administrators and power users. It guides non-technical users through migrating their data from cloud services (Google Photos, Google Drive, iCloud) to self-hosted, privacy-focused alternatives.
+
+## Why This Exists
+
+Nix is incredibly powerful, but it has a steep learning curve. Clearsky demonstrates that **Nix can power user-friendly applications** that hide all complexity behind a simple graphical interface. No terminal commands. No configuration files. No "works on my machine" problems.
+
+**This is what happens when you apply Nix's reproducibility and modularity to real-world problems:** families can reclaim their photos from Google, small businesses can host their own documents, and anyone can run their own services—without learning a new operating system.
 
 ## Features
 
-- 🎯 **Simple Migration Wizard** - Step-by-step guided process for migrating data
-- 🧩 **Modular Migration Framework** - Extensible architecture with reusable components
-- 📸 **Google Photos → Immich** - Export and import photos with album preservation
-- 📁 **Google Drive / Docs** - Migrate documents to self-hosted storage
-- 🔐 **Privacy First** - All data stays on your machine, no cloud required
+- 🎯 **Simple Migration Wizard** - Step-by-step guided process, no technical knowledge required
+- 🧩 **Modular Migration Framework** - Extensible architecture built on Nix flakes
+- 📸 **Google Photos → Immich** - Automatic download via API or manual Takeout export
+- 📁 **Google Docs → Etherpad** - Migrate documents for collaborative editing
+- ☁️ **One-Click Service Setup** - Nextcloud, ownCloud, Home Assistant
+- 🔐 **Privacy First** - All data stays on your machine, under your control
 - 🔄 **Easy Rollback** - Undo migrations with a single click
-- 🌐 **Remote Access** - Tailscale integration for secure remote access
-- 📦 **Self-Contained AppImage** - Everything bundled via Nix, no system dependencies needed
+- 🌐 **Remote Access** - Tailscale integration for secure access from anywhere
+- 📦 **Self-Contained AppImage** - Everything bundled via Nix, runs on any Linux
 
 ## Architecture
+
 <img width="2752" height="1536" alt="clearsky" src="https://github.com/user-attachments/assets/a4101fa3-a52f-4064-83ad-de586918b8c8" />
 
 Clearsky uses a **modular migration framework** built on Nix flakes:
@@ -34,7 +42,8 @@ clearsky/
 │   ├── harnesses/             # Reusable components
 │   │   ├── download.nix       # Download from source
 │   │   ├── extract.nix        # Extract archives
-│   │   └── import-immich.nix  # Import to Immich
+│   │   ├── import-immich.nix  # Import to Immich
+│   │   └── setup-nextcloud.nix # Set up Nextcloud
 │   ├── google-photos-to-immich/
 │   │   ├── flake.nix
 │   │   └── migrate.nix
@@ -43,12 +52,34 @@ clearsky/
 └── appimage.nix                # AppImage build
 ```
 
+### What Makes This Different
+
+**Traditional self-hosting:**
+```
+1. Install Docker/Podman
+2. Find the right container image
+3. Figure out volume mounts
+4. Configure environment variables
+5. Debug why it won't start
+6. Read documentation for hours
+7. Maybe it works?
+```
+
+**Clearsky:**
+```
+1. Double-click AppImage
+2. Select "Google Photos to Immich"
+3. Paste API key (or upload Takeout ZIP)
+4. Click "Download My Photos Automatically"
+5. Done
+```
+
 ### Migration Framework
 
 Each migration is a self-contained Nix flake that:
 
 - Declares its source and target services
-- Uses reusable harnesses (download, extract, import)
+- Uses reusable harnesses (download, extract, import, setup)
 - Can be tested independently
 - Can be contributed by third parties
 
@@ -57,12 +88,14 @@ Each migration is a self-contained Nix flake that:
 ## Prerequisites
 
 - Linux (Ubuntu 20.04+, NixOS 24.11+, or other modern distro)
-- Podman 4.0+ (for running containers)
+- Podman 4.0+ **OR** nix-containers (preferred on NixOS)
 - 2GB free disk space
+
+**That's it.** No Node.js, no npm, no build tools—unless you want to modify the code.
 
 ## Installation
 
-### Option 1: Download Pre-Built AppImage
+### Option 1: Download Pre-Built AppImage (Easiest)
 
 ```bash
 # Download the AppImage
@@ -75,7 +108,7 @@ chmod +x Clearsky-1.0.0.AppImage
 ./Clearsky-1.0.0.AppImage
 ```
 
-### Option 2: Build from Source with Nix (Recommended)
+### Option 2: Build from Source with Nix (Reproducible)
 
 ```bash
 # Install Nix if you haven't already
@@ -111,21 +144,42 @@ npm run build
 
 ## Usage
 
-1. **Launch Clearsky** - Double-click the AppImage or run `./Clearsky-1.0.0.AppImage`
-2. **Select a Migration** - Choose from available migrations (e.g., Google Photos → Immich)
-3. **Export Data** - Follow the guide to export your data (e.g., from takeout.google.com)
-4. **Upload Files** - Drag and drop your exported ZIP files into the app
-5. **Import** - Watch the progress as your data is imported to local services
-6. **Set Up Remote Access** - Optionally configure Tailscale for remote access
-7. **Preview & Commit** - Review your migrated data and commit the changes
+### Migrating Google Photos to Immich
 
-## Available Migrations
+1. **Launch Clearsky** - Double-click the AppImage
+2. **Select migration** - Choose "Google Photos to Immich"
+3. **Get API key** (recommended):
+   - Click link to Google Cloud Console
+   - Enable Google Photos Library API
+   - Create API Key
+   - Paste key into Clearsky
+   - Click "🚀 Download My Photos Automatically"
+4. **Or use Takeout** (fallback):
+   - Click "Use Google Takeout instead"
+   - Export from takeout.google.com
+   - Upload ZIP file
+5. **Watch progress** - Photos download/import automatically
+6. **Preview** - Open Immich to verify
+7. **Done** - Your photos are now local!
 
-| Migration | Source | Target | Status |
-|-----------|--------|--------|--------|
-| Google Photos → Immich | Google Photos | Immich | ✅ Complete |
-| Google Drive → Nextcloud | Google Drive | Nextcloud | 🚧 Planned |
-| iCloud Photos → Immich | iCloud | Immich | 🚧 Planned |
+### Setting Up Nextcloud
+
+1. **Select migration** - Choose "Nextcloud Setup"
+2. **Read description** - See what Nextcloud provides
+3. **Click Continue** → "🚀 Start Setup"
+4. **Wait** - Container starts automatically
+5. **Open Dashboard** - Access at http://localhost:8080
+6. **Login** - admin / admin123 (change this!)
+
+### Available Migrations
+
+| Migration | Type | Description |
+|-----------|------|-------------|
+| Google Photos → Immich | Migration | Download photos automatically via API or Takeout |
+| Google Docs → Etherpad | Migration | Export docs, import for collaboration |
+| Nextcloud Setup | Service | File storage, calendar, contacts, docs |
+| ownCloud Setup | Service | Similar to Nextcloud, enterprise focus |
+| Home Assistant Setup | Service | Home automation, 1000+ device integrations |
 
 ## Services
 
@@ -134,10 +188,48 @@ npm run build
 - Runs on `http://localhost:2283`
 - Data stored in `~/.clearsky/immich`
 
+### Nextcloud (Files & Collaboration)
+- File storage and sharing (like Google Drive)
+- Calendar and contacts sync
+- Document collaboration (like Google Docs)
+- Runs on `http://localhost:8080`
+- Data stored in `~/.clearsky/nextcloud`
+
+### ownCloud (Files & Collaboration)
+- Similar to Nextcloud
+- Enterprise-grade security
+- Runs on `http://localhost:8081`
+- Data stored in `~/.clearsky/owncloud`
+
+### Home Assistant (Home Automation)
+- Control lights, thermostats, locks, and more
+- Works with 1000+ brands and devices
+- Local control - no cloud required
+- Runs on `http://localhost:8123`
+- Data stored in `~/.clearsky/homeassistant`
+
 ### Tailscale (Remote Access)
 - Secure VPN for accessing your services from anywhere
 - Runs as a containerized client
 - Configuration stored in `~/.clearsky/tailscale`
+
+## Container Runtime
+
+Clearsky automatically detects and uses the best available container runtime:
+
+1. **nix-containers** (preferred on NixOS/Nix-based systems)
+   - Declarative configuration
+   - Reproducible containers
+   - Nix integration
+   - Rollback support
+
+2. **Podman** (fallback)
+   - Rootless by default
+   - Systemd integration
+   - Widely available
+
+3. **Docker** (last resort)
+   - Universal availability
 
 ## Development
 
@@ -145,7 +237,7 @@ npm run build
 
 - Nix package manager (for reproducible builds) - optional
 - Node.js 18+ (for development)
-- Podman (for running containers)
+- Podman or nix-containers (for running containers)
 
 ### Setup
 
@@ -196,32 +288,29 @@ mkdir -p migrations/my-migration
 
 ## Troubleshooting
 
-### Podman not found
+### No container runtime found
 
-Clearsky requires Podman to be installed on your system:
+Clearsky needs a container runtime to run services:
 
 ```bash
-# Ubuntu/Debian
-sudo apt install podman
+# Install nix-containers (preferred on NixOS)
+nix profile install nixpkgs#nix-containers
 
-# Fedora
-sudo dnf install podman
-
-# Arch Linux
-sudo pacman -S podman
-
-# NixOS
-nix-env -iA nixos.podman
+# Or install Podman
+sudo apt install podman  # Ubuntu/Debian
+sudo dnf install podman  # Fedora
+sudo pacman -S podman    # Arch
+nix-env -iA nixos.podman # NixOS
 ```
 
-### Port 2283 already in use
+### Port already in use
 
 ```bash
 # Check what's using the port
-lsof -i :2283
+lsof -i :8080  # or :2283, :8081, :8123
 
 # Stop the conflicting service
-podman stop clearsky-immich
+podman stop clearsky-nextcloud
 ```
 
 ### Import fails
@@ -249,7 +338,16 @@ nix build
 
 ## Contributing
 
-Contributions are welcome! Especially new migrations!
+Contributions are welcome! This project exists to make self-hosting accessible to everyone.
+
+### Ways to Contribute
+
+1. **New migrations** - Add support for more cloud services
+2. **Better UX** - Improve the wizard, error messages, documentation
+3. **Testing** - Test on different Linux distributions
+4. **Translations** - Make Clearsky accessible in more languages
+
+### Getting Started
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
@@ -268,6 +366,7 @@ See [migrations/HOWTO.md](migrations/HOWTO.md) for the complete guide on creatin
 - [EXAMPLES.md](migrations/EXAMPLES.md) - Example migration implementations
 - [INSTALLATION.md](INSTALLATION.md) - Detailed installation guide
 - [BUILDING.md](BUILDING.md) - Build instructions
+- [code-walkthrough.md](code-walkthrough.md) - How Nix enables data sovereignty
 
 ## License
 
@@ -276,10 +375,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Acknowledgments
 
 - Built with [Electron](https://www.electronjs.org/)
-- Containerized with [Podman](https://podman.io/)
+- Containerized with [Podman](https://podman.io/) and [nix-containers](https://github.com/nix-community/nix-containers)
 - Photo management with [Immich](https://immich.app/)
+- File storage with [Nextcloud](https://nextcloud.com/) and [ownCloud](https://owncloud.com/)
+- Home automation with [Home Assistant](https://www.home-assistant.io/)
 - Remote access with [Tailscale](https://tailscale.com/)
-- Built for the [NixOS Hackathon](https://hackathon.nixos.org/)
 - Reproducible builds with [Nix](https://nixos.org/)
 
 ## Contact
@@ -289,4 +389,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Clearsky**: Reclaim your data. Take back your privacy. 🌤️
+**Clearsky**: Self-hosting for everyone. Not just sysadmins. 🌤️
