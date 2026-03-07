@@ -1,0 +1,84 @@
+# Clearsky Configuration File
+# 
+# Copy this to ~/.clearsky/config.toml or ./clearsky.toml
+# 
+# Most users don't need this file - Clearsky works great with defaults!
+# Only create this if you have specific requirements.
+
+# ─────────────────────────────────────────────────────────────────
+# Container Runtime
+# ─────────────────────────────────────────────────────────────────
+# Options: "auto", "orbstack", "podman", "docker"
+# Default: "auto" (auto-detect in priority order)
+#
+# runtime = "auto"
+
+# ─────────────────────────────────────────────────────────────────
+# Data Directory
+# ─────────────────────────────────────────────────────────────────
+# Where Clearsky stores service data
+# Default: ~/.clearsky
+#
+# dataDir = "~/.clearsky"
+# dataDir = "/Volumes/SSD/clearsky-data"
+
+# ─────────────────────────────────────────────────────────────────
+# Service Ports
+# ─────────────────────────────────────────────────────────────────
+# Override default ports if needed
+#
+# [services.immich]
+# port = 2283
+#
+# [services.nextcloud]
+# port = 8080
+#
+# [services.owncloud]
+# port = 8081
+#
+# [services.homeassistant]
+# port = 8123
+#
+# [services.ghost]
+# port = 2368
+#
+# [services.etherpad]
+# port = 9001
+
+# ─────────────────────────────────────────────────────────────────
+# Migrations
+# ─────────────────────────────────────────────────────────────────
+# How to run migrations
+# Options: "auto" (use Nix if available, fallback to shell), "nix", "shell"
+#
+# [migrations]
+# source = "auto"
+
+# ─────────────────────────────────────────────────────────────────
+# Container Options
+# ─────────────────────────────────────────────────────────────────
+# Advanced: extra arguments to pass to container runtime
+#
+# [containers]
+# extraArgs = ["--memory=4g", "--cpus=2"]
+
+# ─────────────────────────────────────────────────────────────────
+# Example: Power User Setup
+# ─────────────────────────────────────────────────────────────────
+# 
+# # Force Podman instead of auto-detect
+# runtime = "podman"
+# 
+# # Store data on external drive
+# dataDir = "/Volumes/Data/clearsky"
+# 
+# # Custom ports to avoid conflicts
+# [services.immich]
+# port = 9000
+# 
+# [services.nextcloud]
+# port = 9001
+# 
+# # Limit resource usage
+# [containers]
+# extraArgs = ["--memory=4g", "--cpus=2"]

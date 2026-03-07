@@ -26,7 +26,8 @@
   },
   "dependencies": {
     "adm-zip": "^0.5.10",
-    "node-fetch": "^3.3.2"
+    "node-fetch": "^3.3.2",
+    "toml": "^3.0.0"
   },
   "build": {
     "appId": "com.clearsky.app",
@@ -43,7 +44,9 @@
       "target": [
         {
           "target": "dmg",
-          "arch": ["universal"]
+          "arch": [
+            "universal"
+          ]
         },
         "zip"
       ],
