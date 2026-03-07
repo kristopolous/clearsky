@@ -17,9 +17,11 @@ Nix is incredibly powerful, but it has a steep learning curve. Clearsky demonstr
 
 - 🎯 **Simple Migration Wizard** - Step-by-step guided process, no technical knowledge required
 - 🧩 **Modular Migration Framework** - Extensible architecture built on Nix flakes
+- 🤖 **AI-Powered Migration Creator** - Claude Skills for agentic migration development
 - 📸 **Google Photos → Immich** - Automatic download via API or manual Takeout export
 - 📁 **Google Docs → Etherpad** - Migrate documents for collaborative editing
-- ☁️ **One-Click Service Setup** - Nextcloud, ownCloud, Home Assistant
+- ✍️ **Substack/Medium → Ghost** - Migrate blogs to self-hosted Ghost
+- ☁️ **One-Click Service Setup** - Nextcloud, ownCloud, Home Assistant, Ghost
 - 🔐 **Privacy First** - All data stays on your machine, under your control
 - 🔄 **Easy Rollback** - Undo migrations with a single click
 - 🌐 **Remote Access** - Tailscale integration for secure access from anywhere
@@ -406,16 +408,61 @@ Contributions are welcome! This project exists to make self-hosting accessible t
 
 ### Contributing Migrations
 
-See [migrations/HOWTO.md](migrations/HOWTO.md) for the complete guide on creating and contributing migrations.
+#### Option 1: Use Claude Skills (Recommended)
+
+The easiest way to create a new migration is to use the **new-migration** Claude Skill:
+
+1. **Enable the skill** in Claude:
+   - Copy the `skills/new-migration/` folder to your Claude skills directory
+   - Or reference it when chatting with Claude
+
+2. **Ask Claude to create a migration**:
+   ```
+   Use the new-migration skill to create a migration from Twitter to Ghost
+   ```
+
+3. **Claude will guide you through**:
+   - Planning the migration (source, target, export format)
+   - Creating the Nix flake structure
+   - Using existing harnesses or creating new ones
+   - Testing the migration
+
+This agentic approach handles the Nix complexity automatically while you focus on the migration logic.
+
+#### Option 2: Manual Creation
+
+See [migrations/HOWTO.md](migrations/HOWTO.md) for the complete guide on creating and contributing migrations manually.
+
+#### Migration Ideas
+
+Looking for inspiration? Here are some requested migrations:
+
+- **Twitter/X → Ghost** - Export tweets, import as blog posts
+- **iCloud Photos → Immich** - Download from iCloud, import to Immich
+- **Dropbox → Nextcloud** - Migrate files and folders
+- **WordPress → Ghost** - Export WordPress XML, import to Ghost
+- **Pocket → Self-hosted** - Export bookmarks to linkding or similar
+- **IFTTT → Home Assistant** - Migrate applets to automations
 
 ## Documentation
 
-- [HOWTO.md](migrations/HOWTO.md) - How to contribute new migrations
-- [HARNESSES.md](migrations/HARNESSES.md) - Documentation for migration harnesses
-- [EXAMPLES.md](migrations/EXAMPLES.md) - Example migration implementations
-- [INSTALLATION.md](INSTALLATION.md) - Detailed installation guide
-- [BUILDING.md](BUILDING.md) - Build instructions
+### User Documentation
+- [INSTALLATION.md](INSTALLATION.md) - Installation guide
+- [QUICKSTART.md](QUICKSTART.md) - Quick start guide
+- [CLI.md](CLI.md) - Command-line interface usage
+- [TESTING.md](TESTING.md) - Running tests
+
+### Developer Documentation
 - [code-walkthrough.md](code-walkthrough.md) - How Nix enables data sovereignty
+- [BUILDING.md](BUILDING.md) - Build instructions
+
+### Migration Documentation
+- [skills/new-migration/SKILL.md](skills/new-migration/SKILL.md) - **Agentic migration creator (Claude Skill)**
+- [migrations/registry.nix](migrations/registry.nix) - Current migration registry
+
+### Skills
+- [skills/](skills/) - Claude Skills for agentic workflows
+  - [new-migration](skills/new-migration/) - Create new migrations with AI assistance
 
 ## License
 
